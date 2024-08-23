@@ -1,6 +1,8 @@
 mod vec3;
-use vec3::Vec3;
+mod color;
 
+use vec3::Vec3;
+use color::Color;
 
 
 fn main() {

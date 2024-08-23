@@ -116,35 +116,35 @@ impl Div<f32> for Vec3 {
 
 
 impl Vec3 {
-    fn new (x: f32, y: f32, z: f32) -> Self{
+    pub fn new (x: f32, y: f32, z: f32) -> Self{
         Vec3 { e: [x, y, z] }
     }
 
-    fn x (&self) -> f32 {
+    pub fn x (&self) -> f32 {
         self[0]
     }
 
-    fn y (&self) -> f32 {
+    pub fn y (&self) -> f32 {
         self[1]
     }
 
-    fn z (&self) -> f32 {
+    pub fn z (&self) -> f32 {
         self[2]
     }
 
-    fn length_squared (&self) -> f32 {
+    pub fn length_squared (&self) -> f32 {
         self[0] * self[0] + self[1] * self[1] + self[2] * self[2]
     }
 
-    fn length (&self) -> f32 {
+    pub fn length (&self) -> f32 {
         self.length_squared().sqrt()
     }
 
-    fn dot (&self, other: &Vec3) -> f32 {
+    pub fn dot (&self, other: &Vec3) -> f32 {
         self[0] * other[0] + self[1] * other[1] + self[2] * other[2]
     }
 
-    fn cross (&self, other: &Vec3) -> Vec3 {
+    pub fn cross (&self, other: &Vec3) -> Vec3 {
         Vec3 { e: [ self[1] * other[2] - self[2] * other[1], 
                 self[2] * other[0] - self[0] * other[2], 
                 self[0] * other[1] - self[1] * other[0] 
@@ -152,7 +152,7 @@ impl Vec3 {
             }
     }
 
-    fn unit_vector (&self) -> Vec3 {
+    pub fn unit_vector (&self) -> Vec3 {
         *self / self.length()
     }
 
@@ -324,7 +324,8 @@ mod tests {
 
     #[test]
     fn test_vec3_unit_vector(){
-        let v = Vec3::new(3.0, 4.0, 10.0);
+        // Testing alias
+        let v = Point3::new(3.0, 4.0, 10.0);
 
         let w = v.unit_vector();
 
@@ -334,30 +335,5 @@ mod tests {
 
 
     }
-
-
-
-/*     #[test]
-    fn test_vec3_mul_assign(){
-        let mut v = Vec3::new(1.0, 2.0, 3.0);
-        let u = Vec3::new(4.0, 5.0, 6.0);
-        v *= u;
-
-        assert_eq!(v[0], 4.0);
-        assert_eq!(v[1], 10.0);
-        assert_eq!(v[2], 18.0);
-    }
-
-    #[test]
-    fn test_vec3_div_assign(){
-        let mut v = Vec3::new(6.0, 2.0, 8.0);
-        let u = 8.0;
-        v /= u;
-
-        assert_eq!(v[0], 0.75);
-        assert_eq!(v[1], 0.25);
-        assert_eq!(v[2], 1.0);
-    } */
-
 
 }
