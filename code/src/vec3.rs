@@ -186,4 +186,178 @@ mod tests {
         assert_eq!(format!("{}", v), "1.0 2.0 3.0");
     }
 
+    #[test]
+    fn test_vec3_neg(){
+        let v = Vec3::new(1.0, 2.0, 3.0);
+        let u = v.neg();
+        let w = u.neg();
+        assert_eq!(u.e[0], -1.0);
+        assert_eq!(u.e[1], -2.0);
+        assert_eq!(u.e[2], -3.0);    
+
+        assert_eq!(w[0], 1.0);
+        assert_eq!(w[1], 2.0);
+        assert_eq!(w[2], 3.0);
+    }
+
+    #[test]
+    fn test_vec3_add_assign(){
+        let mut v = Vec3::new(1.0, 2.0, 3.0);
+        let u = Vec3::new(4.0, 5.0, 6.0);
+        v += u;
+
+        assert_eq!(v[0], 5.0);
+        assert_eq!(v[1], 7.0);
+        assert_eq!(v[2], 9.0);
+    }
+
+    #[test]
+    fn test_vec3_mul_assign(){
+        let mut v = Vec3::new(1.0, 2.0, 3.0);
+        let u = 3.0;
+        v *= u;
+
+        assert_eq!(v[0], 3.0);
+        assert_eq!(v[1], 6.0);
+        assert_eq!(v[2], 9.0);
+    }
+
+    #[test]
+    fn test_vec3_div_assign(){
+        let mut v = Vec3::new(6.0, 2.0, 8.0);
+        let u = 8.0;
+        v /= u;
+
+        assert_eq!(v[0], 0.75);
+        assert_eq!(v[1], 0.25);
+        assert_eq!(v[2], 1.0);
+    }
+
+    #[test]
+    fn test_vec3_add(){
+        let v = Vec3::new(1.0, 2.0, 3.0);
+        let u = Vec3::new(4.0, 5.0, 6.0);
+        let w = v + u;
+
+        assert_eq!(w[0], 5.0);
+        assert_eq!(w[1], 7.0);
+        assert_eq!(w[2], 9.0);
+    }
+    
+    #[test]
+    fn test_vec3_sub(){
+        let v = Vec3::new(1.0, 2.0, 3.0);
+        let u = Vec3::new(4.0, 5.0, 6.0);
+        let w = v - u;
+
+        assert_eq!(w[0], -3.0);
+        assert_eq!(w[1], -3.0);
+        assert_eq!(w[2], -3.0);
+    }
+
+    #[test]
+    fn test_vec3_mul(){
+        let v = Vec3::new(1.0, 2.0, 3.0);
+        let u = Vec3::new(4.0, 5.0, 6.0);
+        let w = u * v;
+
+        assert_eq!(w[0], 4.0);
+        assert_eq!(w[1], 10.0);
+        assert_eq!(w[2], 18.0);
+    }
+
+    #[test]
+    fn test_vec3_mul_float(){
+        let v = Vec3::new(1.0, 2.0, 3.0);
+        let t = 2.0;
+        let w = v * t;
+
+        assert_eq!(w[0], 2.0);
+        assert_eq!(w[1], 4.0);
+        assert_eq!(w[2], 6.0);
+    }
+
+    #[test]
+    fn test_vec3_div_float(){
+        let v = Vec3::new(1.0, 2.0, 3.0);
+        let t = 2.0;
+        let w = v / t;
+
+        assert_eq!(w[0], 0.5);
+        assert_eq!(w[1], 1.0);
+        assert_eq!(w[2], 1.5);
+    }
+
+    #[test]
+    fn test_vec3_length(){
+        let v = Vec3::new(2.0, 2.0, 3.0);
+
+        assert_eq!(v.length_squared(), 17.0);
+        assert_eq!(v.length(), 17.0_f32.sqrt());
+    }
+
+    #[test]
+    fn test_vec3_dot(){
+        let v = Vec3::new(2.0, 2.0, 3.0);
+        let u = Vec3::new(2.0, 3.0, 4.0);
+
+        assert_eq!(v.dot(&u), 22.0);
+    }
+
+    #[test]
+    fn test_vec3_cross(){
+        let v = Vec3::new(1.0, 6.0, 0.0);
+        let u = Vec3::new(-2.0, 5.0, 0.0);
+
+        let w = v.cross(&u);
+
+        assert_eq!(w[0], 0.0);
+        assert_eq!(w[1], 0.0);
+        assert_eq!(w[2], 17.0);
+
+        // Testing ownership
+        println!("{}", v);
+        println!("{}", u);
+        println!("{}", w);
+
+    }
+
+    #[test]
+    fn test_vec3_unit_vector(){
+        let v = Vec3::new(3.0, 4.0, 10.0);
+
+        let w = v.unit_vector();
+
+        assert_eq!(w[0], 3.0 / (125_f32.sqrt()));
+        assert_eq!(w[1], 4.0 / (125_f32.sqrt()));
+        assert_eq!(w[2], 10.0 / (125_f32.sqrt()));
+
+
+    }
+
+
+
+/*     #[test]
+    fn test_vec3_mul_assign(){
+        let mut v = Vec3::new(1.0, 2.0, 3.0);
+        let u = Vec3::new(4.0, 5.0, 6.0);
+        v *= u;
+
+        assert_eq!(v[0], 4.0);
+        assert_eq!(v[1], 10.0);
+        assert_eq!(v[2], 18.0);
+    }
+
+    #[test]
+    fn test_vec3_div_assign(){
+        let mut v = Vec3::new(6.0, 2.0, 8.0);
+        let u = 8.0;
+        v /= u;
+
+        assert_eq!(v[0], 0.75);
+        assert_eq!(v[1], 0.25);
+        assert_eq!(v[2], 1.0);
+    } */
+
+
 }
