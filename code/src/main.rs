@@ -17,12 +17,9 @@ fn main() {
             let r: f32 = (i as f32) / (image_width - 1) as f32;
             let g: f32 = (j as f32) / (image_height - 1) as f32;
             let b: f32 = 0.0;
+            let pixel_color = Color::new(r, g, b);    
 
-            let ir = 255.999 * r;
-            let ig = 255.999 * g;
-            let ib = 255.999 * b;        
-
-            println!("{} {} {}", ir, ig, ib);
+            println!("{}", pixel_color);
         
         }
     }
