@@ -1,8 +1,10 @@
 mod vec3;
 mod color;
+mod ray;
 
 use vec3::Vec3;
 use color::Color;
+use ray::Ray;
 
 
 fn main() {

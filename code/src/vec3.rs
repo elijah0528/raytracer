@@ -3,7 +3,7 @@ use std::fmt;
 
 pub type Point3 = Vec3;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vec3 {
     e: [f32; 3],
 }
@@ -160,7 +160,6 @@ impl Vec3 {
 
 
 #[cfg(test)]
-
 mod tests {
     use super::*;
 
