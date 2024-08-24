@@ -69,7 +69,7 @@ fn main() {
     
 
     // Camera
-    let focal_length = -1.0;
+    let focal_length = 1.0;
     let viewport_height: f32 = 2.0;
     let viewport_width = viewport_height * (image_width as f32) / (image_height as f32);
     let camera_center = Point3::default();
@@ -81,7 +81,7 @@ fn main() {
     let pixel_delta_u = viewport_u / image_width as f32;
     let pixel_delta_v = viewport_v / image_height as f32;
 
-    let viewport_upper_left = camera_center + Vec3::new(0.0, 0.0, focal_length) - viewport_u/2.0 - viewport_v/2.0;
+    let viewport_upper_left = camera_center - Vec3::new(0.0, 0.0, focal_length) - viewport_u/2.0 - viewport_v/2.0;
     let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
 
