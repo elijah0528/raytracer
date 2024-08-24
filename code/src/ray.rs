@@ -4,7 +4,7 @@ use crate::vec3::Point3;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Ray {
     origin: Point3, 
-    dir: Vec3,
+    direction: Vec3,
 }
 
 
@@ -12,16 +12,16 @@ impl Default for Ray {
     fn default() -> Self {
 
         let origin = Point3::default();
-        let dir = Vec3::default();
+        let direction = Vec3::default();
 
-        Ray { origin, dir }
+        Ray { origin, direction }
     }
 }
 
 
 impl Ray {
-    pub fn new (origin: Point3, dir: Vec3) -> Self{
-        Ray { origin, dir }
+    pub fn new (origin: Point3, direction: Vec3) -> Self{
+        Ray { origin, direction }
     }
 
     pub fn origin (&self) -> Point3 {
@@ -29,11 +29,11 @@ impl Ray {
     }
 
     pub fn direction (&self) -> Vec3 {
-        return self.dir
+        return self.direction
     }
 
     pub fn at (&self, t: f32) -> Point3 {
-        self.origin + self.dir * t
+        self.origin + self.direction * t
     }
 
 }
@@ -48,29 +48,29 @@ mod tests {
         assert_eq!(v.origin[0], 0.0);
         assert_eq!(v.origin[1], 0.0);
         assert_eq!(v.origin[2], 0.0);
-        assert_eq!(v.dir[0], 0.0);
-        assert_eq!(v.dir[1], 0.0);
-        assert_eq!(v.dir[2], 0.0);
+        assert_eq!(v.direction[0], 0.0);
+        assert_eq!(v.direction[1], 0.0);
+        assert_eq!(v.direction[2], 0.0);
     }
 
     #[test]
     fn test_ray_creation(){
         
         let origin = Point3::new(1.0, 2.0, 3.0);
-        let dir = Vec3::new(4.0, 5.0, 6.0);
+        let direction = Vec3::new(4.0, 5.0, 6.0);
         
-        let v = Ray::new(origin, dir);
+        let v = Ray::new(origin, direction);
 
 
         assert_eq!(v.origin, origin);
-        assert_eq!(v.dir, dir);
+        assert_eq!(v.direction, direction);
 
         assert_eq!(v.origin[0], 1.0);
         assert_eq!(v.origin[1], 2.0);
         assert_eq!(v.origin[2], 3.0);
-        assert_eq!(v.dir[0], 4.0);
-        assert_eq!(v.dir[1], 5.0);
-        assert_eq!(v.dir[2], 6.0);
+        assert_eq!(v.direction[0], 4.0);
+        assert_eq!(v.direction[1], 5.0);
+        assert_eq!(v.direction[2], 6.0);
     }
 
 
@@ -78,9 +78,9 @@ mod tests {
     fn test_ray_at(){
         
         let origin = Point3::new(1.0, 2.0, 3.0);
-        let dir = Vec3::new(4.0, 5.0, 6.0);
+        let direction = Vec3::new(4.0, 5.0, 6.0);
         
-        let v = Ray::new(origin, dir);
+        let v = Ray::new(origin, direction);
 
         let ans = Vec3::new(9.0, 12.0, 15.0);
 

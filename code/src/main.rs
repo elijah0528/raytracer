@@ -7,33 +7,57 @@ use color::Color;
 use ray::Ray;
 
 fn hit_sphere(center: Point3, radius: f32, r: Ray) -> f32 {
-    let oc = center - r.origin();
+    let oc = r.origin() - center;
     let a = r.direction().dot(&r.direction());
-    let b = 2.0 * r.direction().dot(&oc);
+    let b = 2.0 * oc.dot(&r.direction());
     let c = oc.dot(&oc) - radius * radius;
 
     let discriminant = b * b - 4.0 * a * c;
     if discriminant < 0.0 {
         -1.0
     } else {
-        (-b - discriminant.sqrt() ) / (2.0 * a)
+        (-b - discriminant.sqrt()) / (2.0 * a)
     }
 }
 
 fn ray_color (r: Ray) -> Color {
 
     let t = hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, r);
+    // print!("{} ", t);
     if t > 0.0  {
-        let N: Vec3 = (r.at(t) - Vec3::new(0.0, 0.0, -1.0)).unit_vector();
-        return Color::new(N.x() + 1.0, N.y() + 1.0, N.z() + 1.0) * 0.5;
+        // println!("\n");
+        let n: Vec3 = (r.at(t) - Vec3::new(0.0, 0.0, -1.0)).unit_vector();
+        assert!(n.x() >= -1.0 && n.x() <= 1.0, "n.x out of range: {}", n.x());
+        assert!(n.y() >= -1.0 && n.y() <= 1.0, "n.y out of range: {}", n.y());
+        assert!(n.z() >= -1.0 && n.z() <= 1.0, "n.z out of range: {}", n.z());
+        
+        // println!("{}", *count);
+        return Color::new(0.5 * n.x() + 0.5, 0.5 * n.y() + 0.5, 0.5 * n.z() + 0.5);
     }
     let unit_direction = r.direction().unit_vector();
     let a = 0.5*(unit_direction.y() + 1.0);
     (1.0-a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ray_color() {
+        let p = Point3::new(0.0, 0.0, 0.0);
+        let q = Point3::new(1.0, 0.0, 0.0);
+        let r = Ray::new(p, q);
+        assert_eq!(ray_color(r), Color::new(0.75, 0.85, 1.0));
+    }
+}
+
+
 fn main() {
 
+    let mut debug_count = 0;
+    
     let aspect_ratio: f32 = 16.0/9.0;
     let image_width: i32 = 256;
 
@@ -45,7 +69,7 @@ fn main() {
     
 
     // Camera
-    let focal_length = 1.0;
+    let focal_length = -1.0;
     let viewport_height: f32 = 2.0;
     let viewport_width = viewport_height * (image_width as f32) / (image_height as f32);
     let camera_center = Point3::default();
@@ -75,5 +99,6 @@ fn main() {
         
         }
     }
+    // println!("{}", debug_count);
 
 }
