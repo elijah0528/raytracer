@@ -1,6 +1,6 @@
 use crate::vec3::Vec3;
 use std::fmt;
-use std::ops::{Deref, DerefMut, Div};
+use std::ops::{Deref, DerefMut, Div, Mul, Add, Sub};
 
 
 // Creating a new type wrapper
@@ -21,6 +21,22 @@ impl DerefMut for Color {
     }
 }
 
+impl Add for Color {
+    type Output = Color;
+
+    fn add(self, other: Color) -> Self::Output {
+        Color::new(self[0] + other[0], self[1] + other[1], self[2] + other[2])
+    }
+}
+
+impl Sub for Color {
+    type Output = Color;
+
+    fn sub(self, other: Color) -> Self::Output {
+        Color::new(self[0] - other[0], self[1] - other[1], self[2] - other[2])
+    }
+}
+
 impl Div<f32> for Color {
     type Output = Color;
 
@@ -29,6 +45,31 @@ impl Div<f32> for Color {
     }
 
 }
+
+impl Mul for Color {
+    type Output = Color;
+
+    fn mul(self, other: Color) -> Self::Output {
+        Color::new(self[0]* other[0], self[1] * other[1], self[2] * other[2])
+    }
+}
+
+impl Mul<f32> for Color {
+    type Output = Color;
+
+    fn mul(self, t: f32) -> Self::Output {
+        Color::new(self[0] * t, self[1] * t, self[2] * t)
+    }
+}
+
+impl Mul<Color> for f32 {
+    type Output = Color;
+
+    fn mul(self, v: Color) -> Self::Output {
+        Color::new(v[0] * self, v[1] * self, v[2] * self)
+    }
+}
+
 
 impl fmt::Display for Color {
     fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {

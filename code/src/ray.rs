@@ -84,7 +84,5 @@ mod tests {
         let ans = Vec3::new(9.0, 12.0, 15.0);
 
         assert_eq!(v.at(2.0), ans);
-
-
     }
 }
