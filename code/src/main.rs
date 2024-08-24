@@ -59,7 +59,7 @@ fn main() {
     let mut debug_count = 0;
     
     let aspect_ratio: f32 = 16.0/9.0;
-    let image_width: i32 = 256;
+    let image_width: i32 = 400;
 
     
     let mut image_height: i32 = ((image_width as f32) / aspect_ratio) as i32;
