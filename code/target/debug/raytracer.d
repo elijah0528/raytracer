@@ -1,1 +1,1 @@
-/Users/elijah/Code/raytracer/code/target/debug/raytracer: /Users/elijah/Code/raytracer/code/src/color.rs /Users/elijah/Code/raytracer/code/src/main.rs /Users/elijah/Code/raytracer/code/src/ray.rs /Users/elijah/Code/raytracer/code/src/vec3.rs
+/Users/elijah/Code/raytracer/code/target/debug/raytracer: /Users/elijah/Code/raytracer/code/src/camera.rs /Users/elijah/Code/raytracer/code/src/color.rs /Users/elijah/Code/raytracer/code/src/main.rs /Users/elijah/Code/raytracer/code/src/ray.rs /Users/elijah/Code/raytracer/code/src/vec3.rs

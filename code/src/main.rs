@@ -1,12 +1,14 @@
 mod vec3;
 mod color;
 mod ray;
-mod hittable;
+mod camera;
+// mod hittable;
 
 use vec3::{Vec3, Point3};
 use color::Color;
 use ray::Ray;
-use hittable::{Sphere, hit_record};
+use camera::Camera;
+// use hittable::{Sphere, hit_record};
 
 fn hit_sphere(center: Point3, radius: f32, r: Ray) -> f32 {
     let oc = r.origin() - center;
@@ -71,20 +73,19 @@ fn main() {
     
 
     // Camera
-    let focal_length = 1.0;
     let viewport_height: f32 = 2.0;
     let viewport_width = viewport_height * (image_width as f32) / (image_height as f32);
-    let camera_center = Point3::default();
-
-    // Viewport
+    
     let viewport_u = Vec3::new(viewport_width, 0.0, 0.0);
     let viewport_v = Vec3::new(0.0, -viewport_height, 0.0);
-
+    
     let pixel_delta_u = viewport_u / image_width as f32;
     let pixel_delta_v = viewport_v / image_height as f32;
 
-    let viewport_upper_left = camera_center - Vec3::new(0.0, 0.0, focal_length) - viewport_u/2.0 - viewport_v/2.0;
-    let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+    // camera_center:Point3, focal_length: f32, viewport_height: f32, viewport_width: f32
+    let camera = Camera::new(Point3::default(), 1.0, viewport_height, viewport_width);
+
+    let pixel00_loc = camera.viewport_upper_left() + 0.5 * (pixel_delta_u + pixel_delta_v);
 
 
     println!("P3\n{} {} \n255\n", image_width, image_height);
@@ -92,8 +93,8 @@ fn main() {
     for j in 0..image_height {
         for i in 0..image_width{
             let pixel_center = pixel00_loc + (pixel_delta_u * (i as f32)) + (pixel_delta_v * (j as f32));
-            let ray_direction = pixel_center - camera_center;
-            let r = Ray::new(camera_center, ray_direction);
+            let ray_direction = pixel_center - camera.camera_center();
+            let r = Ray::new(camera.camera_center(), ray_direction);
 
             let pixel_color: Color = ray_color(r);
             
