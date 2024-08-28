@@ -2,12 +2,16 @@ mod vec3;
 mod color;
 mod ray;
 mod camera;
+mod hittable;
+mod constants
 // mod hittable;
 
 use vec3::{Vec3, Point3};
 use color::Color;
 use ray::Ray;
 use camera::Camera;
+use hittable::{Hit_record, Hittable_list, Hittable};
+use constants::{INFINITY, PI}
 // use hittable::{Sphere, hit_record};
 
 fn hit_sphere(center: Point3, radius: f32, r: Ray) -> f32 {
@@ -24,7 +28,13 @@ fn hit_sphere(center: Point3, radius: f32, r: Ray) -> f32 {
     }
 }
 
-fn ray_color (r: Ray) -> Color {
+fn ray_color (r: Ray, world: &dyn Hittable) -> Color {
+    let mut rec: hit_record;
+    
+    if world.hit(r, 0, INFINITY, rec) {
+        0.5 * rec.normal() + colar(1.0, 1.0, 1.0)
+    }
+
 
     let t = hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, r);
     // print!("{} ", t);
@@ -34,7 +44,7 @@ fn ray_color (r: Ray) -> Color {
         assert!(n.x() >= -1.0 && n.x() <= 1.0, "n.x out of range: {}", n.x());
         assert!(n.y() >= -1.0 && n.y() <= 1.0, "n.y out of range: {}", n.y());
         assert!(n.z() >= -1.0 && n.z() <= 1.0, "n.z out of range: {}", n.z());
-        
+
         // println!("{}", *count);
         return Color::new(0.5 * n.x() + 0.5, 0.5 * n.y() + 0.5, 0.5 * n.z() + 0.5);
     }

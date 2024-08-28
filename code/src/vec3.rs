@@ -21,6 +21,7 @@ impl fmt::Display for Vec3 {
 }
 
 
+
 impl Neg for Vec3 {
     type Output = Vec3;
 
@@ -330,7 +331,7 @@ mod tests {
 
         assert_eq!(w[0], 3.0 / (125_f32.sqrt()));
         assert_eq!(w[1], 4.0 / (125_f32.sqrt()));
-        assert_eq!(w[2], 10.0 / (125_f32.sqrt()));
+        assert_eq!(w[2], 10.0 / (125_f32.sqrt()));  
 
 
     }
