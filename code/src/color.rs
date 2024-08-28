@@ -29,6 +29,14 @@ impl Add for Color {
     }
 }
 
+impl Add<Vec3> for Color {
+    type Output = Color;
+
+    fn add(self, other: Vec3) -> Self::Output {
+        Color::new(self[0] + other[0], self[1] + other[1], self[2] + other[2])
+    }
+}
+
 impl Sub for Color {
     type Output = Color;
 
@@ -137,5 +145,16 @@ mod tests {
     fn test_color_display () {
         let c = Color::new(0.5, 0.4, 0.3);
         assert_eq!(format!("{}", c), "127 102 76");
+    }
+
+    #[test]
+    fn test_color_vec3_add () {
+        let c = Color::new(0.5, 0.4, 0.3);
+        let v = Vec3::new(0.5, 0.4, 0.3);
+        let result = c + v;
+        assert_eq!(result[0], 1.0);
+        assert_eq!(result[1], 0.8);
+        assert_eq!(result[2], 0.6);
+
     }
 }

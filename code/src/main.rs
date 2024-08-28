@@ -3,16 +3,18 @@ mod color;
 mod ray;
 mod camera;
 mod hittable;
-mod constants
+mod constants;
 // mod hittable;
 
 use vec3::{Vec3, Point3};
 use color::Color;
 use ray::Ray;
 use camera::Camera;
-use hittable::{Hit_record, Hittable_list, Hittable};
-use constants::{INFINITY, PI}
-// use hittable::{Sphere, hit_record};
+use hittable::{HitRecord, HittableList, Hittable, Sphere};
+use constants::{INFINITY, PI};
+// use hittable::{Sphere, HitRecord};
+
+use std::sync::{Arc};
 
 fn hit_sphere(center: Point3, radius: f32, r: Ray) -> f32 {
     let oc = r.origin() - center;
@@ -29,10 +31,10 @@ fn hit_sphere(center: Point3, radius: f32, r: Ray) -> f32 {
 }
 
 fn ray_color (r: Ray, world: &dyn Hittable) -> Color {
-    let mut rec: hit_record;
+    let mut rec: HitRecord = HitRecord::default();
     
-    if world.hit(r, 0, INFINITY, rec) {
-        0.5 * rec.normal() + colar(1.0, 1.0, 1.0)
+    if world.hit(r, 0.0, INFINITY, &mut rec) {
+        return 0.5 * (Color::new(1.0, 1.0, 1.0) + rec.normal());
     }
 
 
@@ -54,20 +56,6 @@ fn ray_color (r: Ray, world: &dyn Hittable) -> Color {
 }
 
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_ray_color() {
-        let p = Point3::new(0.0, 0.0, 0.0);
-        let q = Point3::new(1.0, 0.0, 0.0);
-        let r = Ray::new(p, q);
-        assert_eq!(ray_color(r), Color::new(0.75, 0.85, 1.0));
-    }
-}
-
-
 fn main() {
 
     let mut debug_count = 0;
@@ -80,6 +68,14 @@ fn main() {
     if image_height < 1 {
         image_height = 1
     }
+
+    let mut world: HittableList = HittableList::default();
+
+    world.add(Arc::new(Sphere::new(Point3::new(0.0,0.0,-1.0), 0.5)));
+    world.add(Arc::new(Sphere::new(Point3::new(0.0,-100.5,-1.0), 100.0)));
+
+
+    
     
 
     // Camera
@@ -106,7 +102,7 @@ fn main() {
             let ray_direction = pixel_center - camera.camera_center();
             let r = Ray::new(camera.camera_center(), ray_direction);
 
-            let pixel_color: Color = ray_color(r);
+            let pixel_color: Color = ray_color(r, &world);
             
             println!("{}", pixel_color);
         
@@ -114,4 +110,18 @@ fn main() {
     }
     // println!("{}", debug_count);
 
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ray_color() {
+        let p = Point3::new(0.0, 0.0, 0.0);
+        let q = Point3::new(1.0, 0.0, 0.0);
+        let r = Ray::new(p, q);
+        assert_eq!(ray_color(r), Color::new(0.75, 0.85, 1.0));
+    }
 }

@@ -2,16 +2,32 @@ use crate::ray::Ray;
 use crate::vec3::{Vec3, Point3};
 use std::sync::Arc;
 
-#[derive(Copy, Clone)]
-pub struct Hit_record {
+#[derive(Default, Copy, Clone)]
+pub struct HitRecord {
     p: Point3,
     normal: Vec3,
     t: f32,
     front_face: bool,
 }
 
-impl Hit_record {
-    fn set_face_normal (&mut self, r: &Ray, outward_normal: Vec3){
+impl HitRecord {
+    pub fn p(&self) -> Point3 {
+        self.p
+    }
+
+    pub fn normal(&self)-> Vec3 {
+        self.normal
+    }
+
+    pub fn t(&self)-> f32 {
+        self.t
+    }
+
+    pub fn front_face(&self)-> bool {
+        self.front_face
+    }
+
+    pub fn set_face_normal (&mut self, r: &Ray, outward_normal: Vec3){
         let truth = r.direction().dot(&outward_normal);
         if truth > 0.0 {
             self.front_face = true
@@ -26,17 +42,8 @@ impl Hit_record {
     }
 }
 
-impl Default for Hit_record {
-    fn default () -> Self {
-        Hit_record { p: Point3::default(),
-                    normal: Vec3::default(),
-                    t: 0.0,
-                    front_face: false,
-        }
-    }
-}
-trait Hittable {
-    fn hit (&self, r: Ray, ray_tmin: f32, ray_tmax: f32, rec: &mut Hit_record) -> bool;
+pub trait Hittable {
+    fn hit (&self, r: Ray, ray_tmin: f32, ray_tmax: f32, rec: &mut HitRecord) -> bool;
 } 
 
 
@@ -49,13 +56,13 @@ impl Sphere {
     pub fn new (center: Point3, radius: f32) -> Self{
         Self {
             center,
-            radius: radius.abs()
+            radius
         }
     }
 }
 
 impl Hittable for Sphere {
-    fn hit (&self, r: Ray, ray_tmin: f32, ray_tmax: f32, rec: &mut Hit_record) -> bool {
+    fn hit (&self, r: Ray, ray_tmin: f32, ray_tmax: f32, rec: &mut HitRecord) -> bool {
         let oc = r.origin() - self.center;
         let a = r.direction().dot(&r.direction());
         let b = 2.0 * oc.dot(&r.direction());
@@ -88,14 +95,15 @@ impl Hittable for Sphere {
     }
 }
 
-pub struct Hittable_list {
+#[derive(Default)]
+pub struct HittableList {
     objects: Vec<Arc<dyn Hittable>>,
     
 }
 
-impl Hittable_list {
+impl HittableList {
     pub fn new () -> Self {
-        Hittable_list {objects: vec!()}
+        HittableList {objects: vec!()}
     }
 
     pub fn objects(&self) -> &Vec<Arc<dyn Hittable>> {
@@ -111,9 +119,9 @@ impl Hittable_list {
     }
 }
 
-impl Hittable for Hittable_list {
-    fn hit (&self, r: Ray, ray_tmin: f32, ray_tmax: f32, rec: &mut Hit_record) -> bool {
-        let mut temp_rec: Hit_record = Hit_record::default();
+impl Hittable for HittableList {
+    fn hit (&self, r: Ray, ray_tmin: f32, ray_tmax: f32, rec: &mut HitRecord) -> bool {
+        let mut temp_rec: HitRecord = HitRecord::default();
         let mut hit_anything: bool = false;
         let mut closest_so_far = ray_tmax;
 
@@ -148,7 +156,7 @@ mod tests {
 
         let ray_tmin = 0.0;
         let ray_tmax = 100.0;
-        let mut rec = Hit_record {
+        let mut rec = HitRecord {
             p: Point3::new(0.0, 0.0, 0.0),
             normal: Vec3::new(0.0, 0.0, 0.0),
             t: 0.0,
