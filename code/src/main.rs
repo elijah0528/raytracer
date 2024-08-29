@@ -32,28 +32,31 @@ fn hit_sphere(center: Point3, radius: f32, r: Ray) -> f32 {
 
 fn ray_color (r: Ray, world: &dyn Hittable) -> Color {
     let mut rec: HitRecord = HitRecord::default();
-    
-    if world.hit(r, 0.0, INFINITY, &mut rec) {
-        return 0.5 * (Color::new(1.0, 1.0, 1.0) + rec.normal());
+    let hit = world.hit(r, 0.0, INFINITY, &mut rec); 
+    match hit {
+        Some(hit_record) => {
+            let n = rec.normal();
+            return Color::new(
+                0.5 * n.x() + 0.5,
+                0.5 * n.y() + 0.5,
+                0.5 * n.z() + 0.5,
+            );        
+        }
+        None => {
+            let t: f32 = 0.5 * (r.direction().unit_vector().y() as f32 + 1.0);
+            return Color::new(
+                (1.0 - t) * 1.0 + t * 0.5,
+                (1.0 - t) * 1.0 + t * 0.7,
+                (1.0 - t) * 1.0 + t * 1.0,
+            );
+        }
     }
-
-
-    let t = hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, r);
-    // print!("{} ", t);
-    if t > 0.0  {
-        // println!("\n");
-        let n: Vec3 = (r.at(t) - Vec3::new(0.0, 0.0, -1.0)).unit_vector();
-        assert!(n.x() >= -1.0 && n.x() <= 1.0, "n.x out of range: {}", n.x());
-        assert!(n.y() >= -1.0 && n.y() <= 1.0, "n.y out of range: {}", n.y());
-        assert!(n.z() >= -1.0 && n.z() <= 1.0, "n.z out of range: {}", n.z());
-
-        // println!("{}", *count);
-        return Color::new(0.5 * n.x() + 0.5, 0.5 * n.y() + 0.5, 0.5 * n.z() + 0.5);
-    }
-    let unit_direction = r.direction().unit_vector();
-    let a = 0.5*(unit_direction.y() + 1.0);
-    (1.0-a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
 }
+
+
+// let unit_direction = r.direction().unit_vector();
+// let a = 0.5 * (unit_direction.y() + 1.0);
+// (1.0-a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
 
 
 fn main() {
@@ -71,8 +74,7 @@ fn main() {
 
     let mut world: HittableList = HittableList::default();
 
-    world.add(Arc::new(Sphere::new(Point3::new(0.0,0.0,-1.0), 0.5)));
-    world.add(Arc::new(Sphere::new(Point3::new(0.0,-100.5,-1.0), 100.0)));
+    world.add(Arc::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.6)));
 
 
     
