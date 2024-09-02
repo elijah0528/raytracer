@@ -57,34 +57,31 @@ impl Sphere {
 impl Hittable for Sphere {
     fn hit (&self, r: Ray, ray_tmin: f32, ray_tmax: f32, rec: &mut HitRecord) -> Option<HitRecord> {
         let oc = r.origin() - self.center;
-        let a = r.direction().dot(&r.direction());
+        let a = r.direction().length_squared();
         let b = 2.0 * oc.dot(&r.direction());
         let h = r.direction().dot(&oc);
 
         let c = oc.length_squared() - self.radius * self.radius;
     
         let discriminant = b * b - 4.0 * a * c;
-        if discriminant < 0.0 {
-            return None;
-        } 
-        
-        let sqrtd = discriminant.sqrt();
-        let mut root = (-h - sqrtd) / a;
 
-        if root <= ray_tmin || ray_tmax <= root {
-            let p = r.at(root);
-            let normal = (p - self.center) / self.radius;
-            let front_face = r.direction().dot(&normal) < 0.0;
-
-            return Some(HitRecord {
-                p: p,
-                normal: normal,
-                t: root,
-                front_face: front_face
-            });
-        } else {
-            None
+        if discriminant > 0.0 {
+            let sqrtd = discriminant.sqrt();
+            let root = (-h - sqrtd) / a;
+            if root < ray_tmax && root > ray_tmin {
+                let p = r.at(root);
+                let normal = (p - self.center) / self.radius;
+                let front_face = r.direction().dot(&normal) < 0.0;
+                
+                return Some(HitRecord {
+                    p: p,
+                    normal: if front_face { normal } else { -normal },
+                    t: root,
+                    front_face,
+                });
+            }
         }
+        None
     }
 }
 
@@ -121,9 +118,11 @@ impl Hittable for HittableList {
             if let Some(hit) = object.hit(r, ray_tmin, closest_so_far, &mut temp_rec) { 
                 hit_anything = true;
                 closest_so_far = hit.t();
+                
                 *rec = temp_rec.clone();
             } 
         }
+        
 
         if hit_anything {
             Some(*rec) 
@@ -149,8 +148,8 @@ mod tests {
         let direction = Vec3::new(0.0, 0.0, -1.0);
         let ray = Ray::new(origin, direction);
 
-        let ray_tmin = 0.0;
-        let ray_tmax = 100.0;
+        let ray_tmin: f32 = 0.0;
+        let ray_tmax: f32 = INFINITY;
         let mut rec = HitRecord {
             p: Point3::new(0.0, 0.0, 0.0),
             normal: Vec3::new(0.0, 0.0, 0.0),

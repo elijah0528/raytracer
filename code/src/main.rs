@@ -16,34 +16,18 @@ use constants::{INFINITY, PI};
 
 use std::sync::{Arc};
 
-fn hit_sphere(center: Point3, radius: f32, r: Ray) -> f32 {
-    let oc = r.origin() - center;
-    let a = r.direction().dot(&r.direction());
-    let b = 2.0 * oc.dot(&r.direction());
-    let c = oc.dot(&oc) - radius * radius;
-
-    let discriminant = b * b - 4.0 * a * c;
-    if discriminant < 0.0 {
-        -1.0
-    } else {
-        (-b - discriminant.sqrt()) / (2.0 * a)
-    }
-}
-
 fn ray_color (r: Ray, world: &dyn Hittable) -> Color {
     let mut rec: HitRecord = HitRecord::default();
     let hit = world.hit(r, 0.0, INFINITY, &mut rec); 
     match hit {
         Some(hit_record) => {
-            let n = rec.normal();
-            return Color::new(
-                0.5 * n.x() + 0.5,
-                0.5 * n.y() + 0.5,
-                0.5 * n.z() + 0.5,
-            );        
+            let n = hit_record.normal();
+            let result: Color = Color::new(1.0, 0.0, 0.0);
+            //let result: Color = (Color::new(1.0, 1.0, 1.0) * 0.5) + (n * 0.5);
+            return result;        
         }
         None => {
-            let t: f32 = 0.5 * (r.direction().unit_vector().y() as f32 + 1.0);
+            let t: f32 = 0.5 * (r.direction().unit_vector().x() as f32 + 1.0);
             return Color::new(
                 (1.0 - t) * 1.0 + t * 0.5,
                 (1.0 - t) * 1.0 + t * 0.7,
@@ -69,15 +53,15 @@ fn main() {
     
     let mut image_height: i32 = ((image_width as f32) / aspect_ratio) as i32;
     if image_height < 1 {
-        image_height = 1
+        image_height = 1;
     }
 
     let mut world: HittableList = HittableList::default();
+    // world.add(Arc::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
+    world.add(Arc::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
 
-    world.add(Arc::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.6)));
 
 
-    
     
 
     // Camera

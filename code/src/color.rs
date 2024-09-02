@@ -96,6 +96,10 @@ impl fmt::Display for Color {
 
 impl Color {
     pub fn new (r: f32, g: f32, b: f32) -> Self{
+/*         assert!(r <= 1.0);
+        assert!(g <= 1.0);
+        assert!(b <= 1.0); */
+
         Color ( Vec3::new(r, g, b) )
     }
 
