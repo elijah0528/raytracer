@@ -4,6 +4,7 @@ mod ray;
 mod camera;
 mod hittable;
 mod constants;
+mod interval;
 // mod hittable;
 
 use vec3::{Vec3, Point3};
@@ -12,6 +13,7 @@ use ray::Ray;
 use camera::Camera;
 use hittable::{HitRecord, HittableList, Hittable, Sphere};
 use constants::{INFINITY, PI};
+use interval::{Interval};
 // use hittable::{Sphere, HitRecord};
 
 use std::sync::{Arc};
@@ -21,7 +23,8 @@ use std::sync::{Arc};
 fn ray_color (r: Ray, world: &dyn Hittable) -> Color {
 
     let mut rec: HitRecord = HitRecord::default();
-    let hit = world.hit(r, 0.0, INFINITY, &mut rec); 
+    let interval = Interval::new(0.0, INFINITY);
+    let hit = world.hit(r, interval, &mut rec); 
     match hit {
         Some(hit_record) => {
             let n = hit_record.normal();
