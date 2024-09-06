@@ -1,7 +1,9 @@
 use crate::ray::Ray;
 use crate::vec3::{Vec3, Point3};
 use std::sync::Arc;
+use crate::constants::{INFINITY, PI};
 
+// A hit record is a point on an object that is hit. The normal vector is captured, distance from the camera and whether or not it hit the front face
 #[derive(Default, Copy, Clone)]
 pub struct HitRecord {
     p: Point3,
@@ -35,11 +37,12 @@ impl HitRecord {
     }
 }
 
+// Hittable is a trait implemented for all objects that can be hit by a ray
 pub trait Hittable {
     fn hit (&self, r: Ray, ray_tmin: f32, ray_tmax: f32, rec: &mut HitRecord) -> Option<HitRecord>;
 } 
 
-
+// Sphere is an example of a hittable object
 pub struct Sphere {
     center: Point3,
     radius: f32,
@@ -63,28 +66,34 @@ impl Hittable for Sphere {
 
         let c = oc.length_squared() - self.radius * self.radius;
     
-        let discriminant = b * b - 4.0 * a * c;
+        let discriminant = h * h - a * c;
+
 
         if discriminant > 0.0 {
-            let sqrtd = discriminant.sqrt();
-            let root = (-h - sqrtd) / a;
-            if root < ray_tmax && root > ray_tmin {
-                let p = r.at(root);
+            let root = discriminant.sqrt();
+            let temp = (-h - root) / a;
+            if temp < ray_tmax && temp > ray_tmin {
+                let p = r.at(temp);
                 let normal = (p - self.center) / self.radius;
                 let front_face = r.direction().dot(&normal) < 0.0;
                 
-                return Some(HitRecord {
-                    p: p,
-                    normal: if front_face { normal } else { -normal },
-                    t: root,
+
+                let mut hit_record = HitRecord{
+                    p,
+                    normal: normal,
+                    t: temp,
                     front_face,
-                });
+                };
+                hit_record.set_face_normal(&r, normal);
+                *rec = hit_record.clone();
+                return Some(hit_record);
             }
         }
         None
     }
 }
 
+// A hittable list is a list of objects which implement the hittable trait
 #[derive(Default)]
 pub struct HittableList {
     objects: Vec<Arc<dyn Hittable>>,
@@ -123,7 +132,6 @@ impl Hittable for HittableList {
             } 
         }
         
-
         if hit_anything {
             Some(*rec) 
         } else {
@@ -159,8 +167,9 @@ mod tests {
 
         let hit = sphere.hit(ray, ray_tmin, ray_tmax, &mut rec);
 
-        assert!(hit);
-        assert!((rec.t - 0.5).abs() < 1e-6);
-        assert!((rec.p - Point3::new(0.0, 0.0, -0.5)).length() < 1e-6);
+        assert!(hit.is_some());
+        let hit_record = hit.unwrap();
+        assert!((hit_record.t - 0.5).abs() < 1e-6);
+        assert!((hit_record.p - Point3::new(0.0, 0.0, -0.5)).length() < 1e-6);
     }
 }
