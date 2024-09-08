@@ -81,7 +81,8 @@ fn main() {
 
     
     
-
+    let cam: Camera = Camera::new(400.0);
+    cam.render(world);
     // Camera
     let viewport_height: f32 = 2.0;
     let viewport_width = viewport_height * (image_width as f32) / (image_height as f32);
