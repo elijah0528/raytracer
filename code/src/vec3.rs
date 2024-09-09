@@ -1,5 +1,6 @@
 use std::ops::{Neg, Index, IndexMut, AddAssign, MulAssign, DivAssign, Add, Sub, Mul, Div};
 use std::fmt;
+use crate::constants::{random_generator, random_generator_range};
 
 pub type Point3 = Vec3;
 
@@ -155,6 +156,39 @@ impl Vec3 {
 
     pub fn unit_vector (&self) -> Vec3 {
         *self / self.length()
+    }
+
+    pub fn random() -> Self {
+        Vec3::new(random_generator(), random_generator(), random_generator())
+    }
+
+    pub fn random_range(min: f32, max: f32) -> Self {
+        Vec3::new(random_generator_range(min, max), random_generator_range(min, max), random_generator_range(min, max))
+    }
+
+    pub fn random_unit_vector() -> Option<Vec3> {
+        while true {
+            let mut p = Vec3::random_range(-1.0, 1.0);
+            let lensq = p.length_squared();
+            if (lensq >= 10e-38 && lensq <= 1.0) {
+                return Some(p / lensq.sqrt());
+            }
+            return None;
+        }
+        return None;
+    }
+
+    pub fn random_on_hemisphere(normal: &Vec3) -> Vec3 {
+        loop {
+            if let Some(on_unit_sphere) = Vec3::random_unit_vector(){
+                if on_unit_sphere.dot(normal) > 0.0 {
+                    return on_unit_sphere;
+                } else {
+                    return -on_unit_sphere;
+                }
+            }
+        }
+
     }
 
 }

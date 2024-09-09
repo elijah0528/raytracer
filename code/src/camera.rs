@@ -125,7 +125,7 @@ impl Camera {
         // camera_center:Point3, focal_length: f32, viewport_height: f32, viewport_width: f32
         self.viewport_upper_left = self.camera_center - Vec3::new(0.0, 0.0, self.focal_length) - self.viewport_u/2.0 - self.viewport_v/2.0;
         self.pixel00_loc = self.viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
-        self.samples_per_pixel = 100.0;
+        self.samples_per_pixel = 10.0;
         self.pixel_sample_scale = 1.0 / self.samples_per_pixel;
     }
 
@@ -150,12 +150,15 @@ impl Camera {
         match hit {
             Some(hit_record) => {
                 let n = hit_record.normal();
+                let direction: Vec3 = Vec3::random_on_hemisphere(&n);
+                
+                return 0.5 * self.ray_color(Ray::new(hit_record.p(), direction), world)
                 // println!("{}", hit_record.normal());
-                return Color::new(
+                /* return Color::new(
                     0.5 * n.x() + 0.5,
                     0.5 * n.y() + 0.5,
                     0.5 * n.z() + 0.5,
-                );        
+                );    */     
             }
             None => {
                 let t: f32 = 0.5 * (r.direction().unit_vector().y() as f32 + 1.0);
