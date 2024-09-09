@@ -166,27 +166,22 @@ impl Vec3 {
         Vec3::new(random_generator_range(min, max), random_generator_range(min, max), random_generator_range(min, max))
     }
 
-    pub fn random_unit_vector() -> Option<Vec3> {
-        while true {
+    pub fn random_unit_vector() -> Vec3 {
+        loop {
             let mut p = Vec3::random_range(-1.0, 1.0);
             let lensq = p.length_squared();
             if (lensq >= 10e-38 && lensq <= 1.0) {
-                return Some(p / lensq.sqrt());
+                return p / lensq.sqrt();
             }
-            return None;
         }
-        return None;
     }
 
     pub fn random_on_hemisphere(normal: &Vec3) -> Vec3 {
-        loop {
-            if let Some(on_unit_sphere) = Vec3::random_unit_vector(){
-                if on_unit_sphere.dot(normal) > 0.0 {
-                    return on_unit_sphere;
-                } else {
-                    return -on_unit_sphere;
-                }
-            }
+        let on_unit_sphere = Vec3::random_unit_vector();
+        if on_unit_sphere.dot(normal) > 0.0 {
+            return on_unit_sphere;
+        } else {
+            return -on_unit_sphere;
         }
 
     }

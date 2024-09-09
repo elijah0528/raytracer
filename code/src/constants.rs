@@ -24,6 +24,13 @@ pub fn random_generator_range(min: f32, max: f32) -> f32 {
     RNG.with(|rng| rng.borrow_mut().gen_range(min..max))
 }
 
+pub fn linear_to_gamma(x: f32) -> f32 {
+    if x > 0.0 {
+        return x.sqrt();
+    }
+    return 0.0
+}
+
 #[cfg(test)]
 
 mod tests {

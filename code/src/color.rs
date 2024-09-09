@@ -1,5 +1,6 @@
 use crate::vec3::Vec3;
 use crate::interval::{Interval};
+use crate::constants::{linear_to_gamma};
 use std::fmt;
 use std::ops::{Deref, DerefMut, Div, Mul, Add, Sub};
 
@@ -82,9 +83,13 @@ impl Mul<Color> for f32 {
 
 impl fmt::Display for Color {
     fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let r = self.x();
-        let g = self.y();
-        let b = self.z();
+        let mut r = self.x();
+        let mut g = self.y();
+        let mut b = self.z();
+
+        r = linear_to_gamma(r);
+        g = linear_to_gamma(g);
+        b = linear_to_gamma(b);
 
         let intensity: Interval = Interval::new(0.000, 0.999);
         let ir = (intensity.clamp(r) * 256.0) as i32;
