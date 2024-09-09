@@ -49,16 +49,3 @@ fn main() {
 
 }
 
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_ray_color() {
-        let p = Point3::new(0.0, 0.0, 0.0);
-        let q = Point3::new(1.0, 0.0, 0.0);
-        let r = Ray::new(p, q);
-        assert_eq!(ray_color(r), Color::new(0.75, 0.85, 1.0));
-    }
-}

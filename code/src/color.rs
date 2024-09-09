@@ -1,4 +1,5 @@
 use crate::vec3::Vec3;
+use crate::interval::{Interval};
 use std::fmt;
 use std::ops::{Deref, DerefMut, Div, Mul, Add, Sub};
 
@@ -85,9 +86,10 @@ impl fmt::Display for Color {
         let g = self.y();
         let b = self.z();
 
-        let ir = (r * 255.999) as i32;
-        let ig = (g * 255.999) as i32;
-        let ib = (b * 255.999) as i32;
+        let intensity: Interval = Interval::new(0.000, 0.999);
+        let ir = (intensity.clamp(r) * 256.0) as i32;
+        let ig = (intensity.clamp(g) * 256.0) as i32;
+        let ib = (intensity.clamp(b) * 256.0) as i32;
 
         write!(f, "{} {} {}", ir, ig, ib)
 

@@ -1,7 +1,7 @@
 use crate::vec3::{Vec3, Point3};
 use crate::color::Color;
 use crate::ray::Ray;
-use crate::constants::{INFINITY};
+use crate::constants::{INFINITY, random_generator_range, random_generator};
 use crate::interval::{Interval};
 use crate::hittable::{HitRecord, HittableList, Hittable, Sphere};
 /* pub struct Camera {
@@ -87,6 +87,8 @@ pub struct Camera {
     pub viewport_u: Vec3,
     pub viewport_v: Vec3,
     pub focal_length: f32,
+    pub samples_per_pixel: f32,
+    pub pixel_sample_scale: f32,
 }
 
 impl Camera {
@@ -98,7 +100,7 @@ impl Camera {
     
     pub fn initialize(&mut self) {
 
-        let aspect_ratio = 1.0;
+        let aspect_ratio = 9.0 / 16.0;
         let mut width: i32 = ((self.image_height as f32) / aspect_ratio) as i32;
 
         if width < 1 {
@@ -106,6 +108,8 @@ impl Camera {
         } else {
             self.image_width = width;
         }
+
+        self.focal_length = 1.0;
 
         // Camera
         self.viewport_height = 2.0;
@@ -117,9 +121,24 @@ impl Camera {
         self.pixel_delta_u = self.viewport_u / self.image_width as f32;
         self.pixel_delta_v = self.viewport_v / self.image_height as f32;
 
+        self.camera_center = Point3::default();
         // camera_center:Point3, focal_length: f32, viewport_height: f32, viewport_width: f32
         self.viewport_upper_left = self.camera_center - Vec3::new(0.0, 0.0, self.focal_length) - self.viewport_u/2.0 - self.viewport_v/2.0;
         self.pixel00_loc = self.viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
+        self.samples_per_pixel = 100.0;
+        self.pixel_sample_scale = 1.0 / self.samples_per_pixel;
+    }
+
+    fn sample_square (&self) -> Vec3 {
+        Vec3::new((random_generator() as f32) - 0.5, (random_generator() as f32) - 0.5, 0.0)
+    }
+
+    fn get_ray(&self, i: i32, j: i32) -> Ray {
+        let offset = self.sample_square();
+        let pixel_sample = self.pixel00_loc + (self.pixel_delta_u * (i as f32 + offset.x())) + (self.pixel_delta_v * (j as f32 + offset.y()));
+        let ray_direction = pixel_sample - self.camera_center;
+        let r = Ray::new(self.camera_center, ray_direction);
+        r
 
     }
 
@@ -165,25 +184,39 @@ impl Camera {
 
         for j in 0..self.image_height {
             for i in 0..self.image_width{
-                let pixel_center = self.pixel00_loc + (self.pixel_delta_u * (i as f32)) + (self.pixel_delta_v * (j as f32));
+/*                 let pixel_center = self.pixel00_loc + (self.pixel_delta_u * (i as f32)) + (self.pixel_delta_v * (j as f32));
                 let ray_direction = pixel_center - self.camera_center;
                 let r = Ray::new(self.camera_center, ray_direction);
 
                 let pixel_color: Color = self.ray_color(r, world);
                 
                 println!("{}", pixel_color);
-            
+ */
+                let mut pixel_color: Color = Color::new(0.0, 0.0, 0.0);
+                for sample in 0..(self.samples_per_pixel as i32) {
+                    let r: Ray = self.get_ray(i, j);
+                    pixel_color = pixel_color + self.ray_color(r, world); 
+                }
+                println!("{}", self.pixel_sample_scale * pixel_color);
+ 
             }
         }
     }
 }
 
-
+#[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
     fn test_camera_new(){
-        let c: Camera = Camera::new(400.0);
-        assert_eq!(c.viewport_height, 2.0);
+        let c: Camera = Camera::new(400);
+        assert_eq!(c.image_height, 400);        
+        assert_eq!(c.image_width, 711);
+        assert_eq!(c.viewport_width, c.viewport_height * 1.7775);
+        assert_eq!(c.viewport_width, c.viewport_height * 1.7775);
+        assert_eq!(c.viewport_width, c.viewport_height * 1.7775);
+        assert_eq!(c.viewport_width, c.viewport_height * 1.7775);
 
     }
 }
