@@ -6,12 +6,14 @@ mod hittable;
 mod constants;
 mod interval;
 mod material;
+mod shapes;
 
 use vec3::Point3;
 use color::Color;
 use camera::Camera;
-use hittable::{HittableList, Sphere};
+use hittable::HittableList;
 use material::{Lambertian, Metal, Dielectric};
+use shapes::Sphere;
 
 use std::sync::Arc;
 
@@ -26,35 +28,35 @@ fn main() {
 
     // World
     let mut world = HittableList::new();
-    
+
     // Ground
     world.add(Arc::new(Sphere::new(
         Point3::new(0.0, -100.5, -1.0),
         100.0,
         material_ground,
     )));
-    
+
     // Center sphere (diffuse blue)
     world.add(Arc::new(Sphere::new(
         Point3::new(0.0, 0.0, -1.0),
         0.5,
         material_center,
     )));
-    
+
     // Left sphere (glass)
     world.add(Arc::new(Sphere::new(
         Point3::new(-1.0, 0.0, -1.0),
         0.5,
         material_left.clone(),
     )));
-    
+
     // Left sphere inner (hollow glass effect)
     world.add(Arc::new(Sphere::new(
         Point3::new(-1.0, 0.0, -1.0),
         -0.4,
         material_left,
     )));
-    
+
     // Right sphere (metal)
     world.add(Arc::new(Sphere::new(
         Point3::new(1.0, 0.0, -1.0),

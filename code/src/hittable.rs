@@ -51,75 +51,18 @@ impl HitRecord {
         self.front_face = r.direction().dot(&outward_normal) < 0.0;
         self.normal = if self.front_face { outward_normal } else { -outward_normal };
     }
+
+    pub fn set_all(&mut self, p: Point3, normal: Vec3, t: f32, material: Arc<dyn Material>) {
+        self.p = p;
+        self.normal = normal;
+        self.t = t;
+        self.material = Some(material);
+    }
 }
 
 /// Hittable trait for objects that can be hit by a ray
 pub trait Hittable: Send + Sync {
     fn hit(&self, r: Ray, ray_t: Interval, rec: &mut HitRecord) -> Option<HitRecord>;
-}
-
-/// Sphere primitive
-pub struct Sphere {
-    center: Point3,
-    radius: f32,
-    material: Arc<dyn Material>,
-}
-
-impl Sphere {
-    pub fn new(center: Point3, radius: f32, material: Arc<dyn Material>) -> Self {
-        Self { center, radius, material }
-    }
-}
-
-impl Hittable for Sphere {
-    fn hit(&self, r: Ray, ray_t: Interval, rec: &mut HitRecord) -> Option<HitRecord> {
-        let oc = r.origin() - self.center;
-        let a = r.direction().length_squared();
-        let h = r.direction().dot(&oc);
-        let c = oc.length_squared() - self.radius * self.radius;
-        let discriminant = h * h - a * c;
-
-        if discriminant > 0.0 {
-            let root = discriminant.sqrt();
-            
-            // Try the closer root first
-            let temp = (-h - root) / a;
-            if ray_t.surrounds(temp) {
-                let p = r.at(temp);
-                let outward_normal = (p - self.center) / self.radius;
-                
-                let mut hit_record = HitRecord {
-                    p,
-                    normal: outward_normal,
-                    t: temp,
-                    front_face: false,
-                    material: Some(Arc::clone(&self.material)),
-                };
-                hit_record.set_face_normal(&r, outward_normal);
-                *rec = hit_record.clone();
-                return Some(hit_record);
-            }
-            
-            // Try the farther root
-            let temp = (-h + root) / a;
-            if ray_t.surrounds(temp) {
-                let p = r.at(temp);
-                let outward_normal = (p - self.center) / self.radius;
-                
-                let mut hit_record = HitRecord {
-                    p,
-                    normal: outward_normal,
-                    t: temp,
-                    front_face: false,
-                    material: Some(Arc::clone(&self.material)),
-                };
-                hit_record.set_face_normal(&r, outward_normal);
-                *rec = hit_record.clone();
-                return Some(hit_record);
-            }
-        }
-        None
-    }
 }
 
 /// A list of hittable objects
@@ -135,6 +78,10 @@ impl HittableList {
 
     pub fn add(&mut self, object: Arc<dyn Hittable>) {
         self.objects.push(object)
+    }
+
+    pub fn objects(&self) -> &Vec<Arc<dyn Hittable>> {
+        &self.objects
     }
 }
 
@@ -164,31 +111,12 @@ impl Hittable for HittableList {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::constants::INFINITY;
-    use crate::material::Lambertian;
-    use crate::color::Color;
 
     #[test]
-    fn test_hittable_sphere() {
-        let center = Point3::new(0.0, 0.0, -1.0);
-        let radius = 0.5;
-        let material = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
-        let sphere = Sphere::new(center, radius, material);
-
-        let origin = Point3::new(0.0, 0.0, 0.0);
-        let direction = Vec3::new(0.0, 0.0, -1.0);
-        let ray = Ray::new(origin, direction);
-
-        let ray_t = Interval::new(0.0, INFINITY);
-        let mut rec = HitRecord::default();
-
-        let hit = sphere.hit(ray, ray_t, &mut rec);
-
-        assert!(hit.is_some());
-        let hit_record = hit.unwrap();
-        assert!(hit_record.front_face());
-        assert!((hit_record.t - 0.5).abs() < 1e-6);
-        assert!((hit_record.p - Point3::new(0.0, 0.0, -0.5)).length() < 1e-6);
-        assert!(hit_record.material.is_some());
+    fn test_hit_record_default() {
+        let rec = HitRecord::default();
+        assert_eq!(rec.t(), 0.0);
+        assert!(!rec.front_face());
+        assert!(rec.material.is_none());
     }
 }
