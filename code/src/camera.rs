@@ -1,9 +1,9 @@
 use crate::vec3::{Vec3, Point3};
 use crate::color::Color;
 use crate::ray::Ray;
-use crate::constants::{INFINITY, random_generator_range, random_generator, linear_to_gamma};
+use crate::constants::{INFINITY, random_generator};
 use crate::interval::{Interval};
-use crate::hittable::{HitRecord, HittableList, Hittable, Sphere};
+use crate::hittable::{HitRecord, Hittable};
 
 
 #[derive(Default)]
@@ -35,7 +35,7 @@ impl Camera {
     pub fn initialize(&mut self) {
 
         let aspect_ratio = 9.0 / 16.0;
-        let mut width: i32 = ((self.image_height as f32) / aspect_ratio) as i32;
+        let width: i32 = ((self.image_height as f32) / aspect_ratio) as i32;
 
         if width < 1 {
             self.image_width = 1;
@@ -107,16 +107,6 @@ impl Camera {
                 );
             }
         }
-    
-    
-        // Background color if no hit
-        let unit_direction = r.direction().unit_vector();
-        let t = 0.5 * (unit_direction.y() + 1.0);
-        Color::new(
-            (1.0 - t) * 1.0 + t * 0.5,
-            (1.0 - t) * 1.0 + t * 0.7,
-            (1.0 - t) * 1.0 + t * 1.0,
-        )
     }
 
     pub fn render(&mut self, world: &dyn Hittable) {
@@ -134,7 +124,7 @@ impl Camera {
                 println!("{}", pixel_color);
  */
                 let mut pixel_color: Color = Color::new(0.0, 0.0, 0.0);
-                for sample in 0..(self.samples_per_pixel as i32) {
+                for _sample in 0..(self.samples_per_pixel as i32) {
                     let r: Ray = self.get_ray(i, j);
                     pixel_color = pixel_color + self.ray_color(r, self.max_recursive_depth, world); 
                 }

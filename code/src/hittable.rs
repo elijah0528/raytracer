@@ -1,7 +1,6 @@
 use crate::ray::Ray;
 use crate::vec3::{Vec3, Point3};
 use std::sync::Arc;
-use crate::constants::{INFINITY, PI};
 use crate::interval::{Interval};
 
 
@@ -27,6 +26,7 @@ impl HitRecord {
         self.t
     }
 
+    #[allow(dead_code)]
     pub fn front_face(&self)-> bool {
         self.front_face
     }
@@ -63,7 +63,6 @@ impl Hittable for Sphere {
     fn hit (&self, r: Ray, ray_t: Interval, rec: &mut HitRecord) -> Option<HitRecord> {
         let oc = r.origin() - self.center;
         let a = r.direction().length_squared();
-        let b = 2.0 * oc.dot(&r.direction());
         let h = r.direction().dot(&oc);
 
         let c = oc.length_squared() - self.radius * self.radius;
@@ -105,17 +104,8 @@ impl HittableList {
     pub fn new () -> Self {
         HittableList {objects: vec!()}
     }
-
-    pub fn objects(&self) -> &Vec<Arc<dyn Hittable>> {
-        &self.objects
-    } 
-
     pub fn add(&mut self, object: Arc<dyn Hittable>) {
         self.objects.push(object)
-    }
-
-    pub fn clear(&mut self) {
-        self.objects.clear()
     }
 }
 
@@ -148,6 +138,7 @@ impl Hittable for HittableList {
 
 mod tests {
     use super::*;
+    use crate::constants::INFINITY;
 
     #[test]
     fn test_hittable_sphere(){
@@ -171,6 +162,7 @@ mod tests {
 
         assert!(hit.is_some());
         let hit_record = hit.unwrap();
+        assert!(hit_record.front_face());
         assert!((hit_record.t - 0.5).abs() < 1e-6);
         assert!((hit_record.p - Point3::new(0.0, 0.0, -0.5)).length() < 1e-6);
     }

@@ -168,9 +168,9 @@ impl Vec3 {
 
     pub fn random_unit_vector() -> Vec3 {
         loop {
-            let mut p = Vec3::random_range(-1.0, 1.0);
+            let p = Vec3::random_range(-1.0, 1.0);
             let lensq = p.length_squared();
-            if (lensq >= 10e-38 && lensq <= 1.0) {
+            if lensq >= 10e-38 && lensq <= 1.0 {
                 return p / lensq.sqrt();
             }
         }

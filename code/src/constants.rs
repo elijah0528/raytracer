@@ -1,16 +1,7 @@
 use rand::Rng;
 use rand::rngs::ThreadRng;
 
-pub struct RandomGenerator {
-    rng: ThreadRng
-}
-
 pub const INFINITY: f32 = f32::INFINITY;
-pub const PI: f32 = 3.141592;
-
-pub fn degrees_to_radians (degrees: f32) -> f32 {
-    degrees * PI / 180.0
-}
 
 thread_local! {
     static RNG: std::cell::RefCell<ThreadRng> = std::cell::RefCell::new(rand::thread_rng());
