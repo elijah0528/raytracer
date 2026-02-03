@@ -6,7 +6,7 @@ use std::ops::{Deref, DerefMut, Div, Mul, Add, Sub};
 
 
 // Creating a new type wrapper
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct Color(Vec3);
 
 impl Deref for Color {
@@ -145,17 +145,40 @@ impl Color {
         *self / self.length()
     }
 
+    /// Convert to RGB bytes (0-255) with gamma correction
+    pub fn to_rgb_bytes(&self) -> (u8, u8, u8) {
+        let r = linear_to_gamma(self.r());
+        let g = linear_to_gamma(self.g());
+        let b = linear_to_gamma(self.b());
+
+        let intensity = Interval::new(0.0, 0.999);
+        let ir = (intensity.clamp(r) * 256.0) as u8;
+        let ig = (intensity.clamp(g) * 256.0) as u8;
+        let ib = (intensity.clamp(b) * 256.0) as u8;
+
+        (ir, ig, ib)
+    }
 }
 
 #[cfg(test)]
 mod tests {
 
     use super::*;
+    use crate::constants::linear_to_gamma;
+    use crate::interval::Interval;
 
     #[test]
     fn test_color_display () {
         let c = Color::new(0.5, 0.4, 0.3);
-        assert_eq!(format!("{}", c), "127 102 76");
+        let intensity: Interval = Interval::new(0.000, 0.999);
+        let expected = format!(
+            "{} {} {}",
+            (intensity.clamp(linear_to_gamma(0.5)) * 256.0) as i32,
+            (intensity.clamp(linear_to_gamma(0.4)) * 256.0) as i32,
+            (intensity.clamp(linear_to_gamma(0.3)) * 256.0) as i32
+        );
+
+        assert_eq!(format!("{}", c), expected);
     }
 
     #[test]
