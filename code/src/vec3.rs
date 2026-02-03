@@ -186,6 +186,22 @@ impl Vec3 {
 
     }
 
+    pub fn near_zero(&self) -> bool {
+        let s = 1e-8;
+        self.e[0].abs() < s && self.e[1].abs() < s && self.e[2].abs() < s
+    }
+
+    pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
+        v - 2.0 * v.dot(&n) * n
+    }
+
+    pub fn refract(uv: Vec3, n: Vec3, etai_over_etat: f32) -> Vec3 {
+        let cos_theta = (-uv).dot(&n).min(1.0);
+        let r_out_perp = etai_over_etat * (uv + cos_theta * n);
+        let r_out_parallel = -(1.0 - r_out_perp.length_squared()).abs().sqrt() * n;
+        r_out_perp + r_out_parallel
+    }
+
 }
 
 
@@ -363,6 +379,30 @@ mod tests {
         assert_eq!(w[2], 10.0 / (125_f32.sqrt()));  
 
 
+    }
+
+    #[test]
+    fn test_vec3_near_zero() {
+        let v = Vec3::new(1e-9, -1e-10, 1e-11);
+        let u = Vec3::new(1e-4, 0.0, 0.0);
+        assert!(v.near_zero());
+        assert!(!u.near_zero());
+    }
+
+    #[test]
+    fn test_vec3_reflect() {
+        let v = Vec3::new(1.0, -1.0, 0.0);
+        let n = Vec3::new(0.0, 1.0, 0.0);
+        let r = Vec3::reflect(v, n);
+        assert_eq!(r, Vec3::new(1.0, 1.0, 0.0));
+    }
+
+    #[test]
+    fn test_vec3_refract() {
+        let uv = Vec3::new(0.0, -1.0, 0.0);
+        let n = Vec3::new(0.0, 1.0, 0.0);
+        let r = Vec3::refract(uv, n, 1.0 / 1.5);
+        assert_eq!(r, Vec3::new(0.0, -1.0, 0.0));
     }
 
 }
