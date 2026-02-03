@@ -145,6 +145,19 @@ impl Color {
         *self / self.length()
     }
 
+    /// Convert to RGB bytes (0-255) with gamma correction
+    pub fn to_rgb_bytes(&self) -> (u8, u8, u8) {
+        let r = linear_to_gamma(self.r());
+        let g = linear_to_gamma(self.g());
+        let b = linear_to_gamma(self.b());
+
+        let intensity = Interval::new(0.0, 0.999);
+        let ir = (intensity.clamp(r) * 256.0) as u8;
+        let ig = (intensity.clamp(g) * 256.0) as u8;
+        let ib = (intensity.clamp(b) * 256.0) as u8;
+
+        (ir, ig, ib)
+    }
 }
 
 #[cfg(test)]

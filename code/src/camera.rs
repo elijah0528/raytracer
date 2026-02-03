@@ -4,6 +4,8 @@ use crate::ray::Ray;
 use crate::constants::{INFINITY, random_generator};
 use crate::interval::Interval;
 use crate::hittable::{HitRecord, Hittable};
+use rayon::prelude::*;
+use std::io::Write;
 
 /// Camera with configurable position, orientation, FOV, and depth of field
 pub struct Camera {
@@ -206,6 +208,62 @@ impl Camera {
             }
         }
         eprintln!("\rDone.                          ");
+    }
+
+    /// Render the scene using parallel processing (multi-threaded)
+    pub fn render_parallel(&self, world: &(dyn Hittable + Sync)) -> Vec<u8> {
+        let width = self.image_width as usize;
+        let height = self.image_height as usize;
+
+        eprintln!("Rendering {}x{} image with {} samples/pixel...", width, height, self.samples_per_pixel);
+
+        // Render all scanlines in parallel
+        let pixels: Vec<Color> = (0..height)
+            .into_par_iter()
+            .flat_map(|j| {
+                if j % 50 == 0 {
+                    eprint!("\rScanlines remaining: {} ", height - j);
+                    let _ = std::io::stderr().flush();
+                }
+                (0..width)
+                    .map(|i| {
+                        let mut pixel_color = Color::new(0.0, 0.0, 0.0);
+                        for _ in 0..self.samples_per_pixel {
+                            let r = self.get_ray(i as i32, j as i32);
+                            pixel_color = pixel_color + self.ray_color(r, self.max_depth, world);
+                        }
+                        self.pixel_sample_scale * pixel_color
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+
+        eprintln!("\rDone.                          ");
+
+        // Convert to RGB bytes
+        let mut buffer = Vec::with_capacity(width * height * 3);
+        for color in pixels {
+            let (r, g, b) = color.to_rgb_bytes();
+            buffer.push(r);
+            buffer.push(g);
+            buffer.push(b);
+        }
+
+        buffer
+    }
+
+    /// Render and save to PNG file
+    pub fn render_to_png(&self, world: &(dyn Hittable + Sync), filename: &str) {
+        let buffer = self.render_parallel(world);
+        
+        let img = image::RgbImage::from_raw(
+            self.image_width as u32,
+            self.image_height as u32,
+            buffer,
+        ).expect("Failed to create image from buffer");
+
+        img.save(filename).expect("Failed to save image");
+        eprintln!("Saved to {}", filename);
     }
 }
 

@@ -16,10 +16,15 @@ use camera::CameraBuilder;
 use hittable::HittableList;
 use material::{Lambertian, Metal, Dielectric};
 use shapes::Sphere;
+use bvh::BvhNode;
 
 use std::sync::Arc;
+use std::env;
 
 fn main() {
+    let args: Vec<String> = env::args().collect();
+    let output_file = args.get(1).map(|s| s.as_str()).unwrap_or("output.png");
+
     // Materials
     let material_ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
     let material_center = Arc::new(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
@@ -64,6 +69,9 @@ fn main() {
         material_right,
     )));
 
+    // Build BVH for acceleration
+    let bvh = BvhNode::new(&world);
+
     // Camera with position, FOV, and depth of field
     let cam = CameraBuilder::new()
         .image_height(400)
@@ -77,5 +85,6 @@ fn main() {
         .focus_dist(3.4)
         .build();
 
-    cam.render(&world);
+    // Render to PNG using multi-threaded rendering
+    cam.render_to_png(&bvh, output_file);
 }
