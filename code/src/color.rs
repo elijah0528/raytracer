@@ -151,11 +151,21 @@ impl Color {
 mod tests {
 
     use super::*;
+    use crate::constants::linear_to_gamma;
+    use crate::interval::Interval;
 
     #[test]
     fn test_color_display () {
         let c = Color::new(0.5, 0.4, 0.3);
-        assert_eq!(format!("{}", c), "127 102 76");
+        let intensity: Interval = Interval::new(0.000, 0.999);
+        let expected = format!(
+            "{} {} {}",
+            (intensity.clamp(linear_to_gamma(0.5)) * 256.0) as i32,
+            (intensity.clamp(linear_to_gamma(0.4)) * 256.0) as i32,
+            (intensity.clamp(linear_to_gamma(0.3)) * 256.0) as i32
+        );
+
+        assert_eq!(format!("{}", c), expected);
     }
 
     #[test]
