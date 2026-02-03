@@ -3,6 +3,7 @@ use crate::vec3::{Vec3, Point3};
 use crate::material::Material;
 use crate::hittable::{Hittable, HitRecord, HittableList};
 use crate::interval::Interval;
+use crate::aabb::AABB;
 use crate::shapes::Quad;
 use std::sync::Arc;
 
@@ -86,6 +87,10 @@ impl Cuboid {
 impl Hittable for Cuboid {
     fn hit(&self, r: Ray, ray_t: Interval, rec: &mut HitRecord) -> Option<HitRecord> {
         self.sides.hit(r, ray_t, rec)
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        self.sides.bounding_box()
     }
 }
 

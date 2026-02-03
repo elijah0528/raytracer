@@ -7,6 +7,8 @@ mod constants;
 mod interval;
 mod material;
 mod shapes;
+mod aabb;
+mod bvh;
 
 use vec3::{Vec3, Point3};
 use color::Color;

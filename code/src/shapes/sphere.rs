@@ -3,6 +3,7 @@ use crate::vec3::{Vec3, Point3};
 use crate::material::Material;
 use crate::hittable::{Hittable, HitRecord};
 use crate::interval::Interval;
+use crate::aabb::AABB;
 use std::sync::Arc;
 
 /// Sphere primitive
@@ -56,6 +57,12 @@ impl Hittable for Sphere {
             }
         }
         None
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        let r = self.radius.abs();
+        let rvec = Vec3::new(r, r, r);
+        Some(AABB::from_points(self.center - rvec, self.center + rvec))
     }
 }
 

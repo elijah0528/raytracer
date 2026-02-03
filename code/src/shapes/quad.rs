@@ -3,6 +3,7 @@ use crate::vec3::{Vec3, Point3};
 use crate::material::Material;
 use crate::hittable::{Hittable, HitRecord};
 use crate::interval::Interval;
+use crate::aabb::AABB;
 use std::sync::Arc;
 
 /// Quad (parallelogram) primitive defined by a corner and two edge vectors
@@ -14,6 +15,7 @@ pub struct Quad {
     d: f32,         // Plane constant
     w: Vec3,        // For barycentric coordinates
     material: Arc<dyn Material>,
+    bbox: AABB,
 }
 
 impl Quad {
@@ -23,7 +25,12 @@ impl Quad {
         let d = normal.dot(&q);
         let w = n / n.dot(&n);
 
-        Self { q, u, v, normal, d, w, material }
+        // Compute bounding box from the four corners
+        let bbox_diagonal1 = AABB::from_points(q, q + u + v);
+        let bbox_diagonal2 = AABB::from_points(q + u, q + v);
+        let bbox = AABB::surrounding_box(&bbox_diagonal1, &bbox_diagonal2).pad();
+
+        Self { q, u, v, normal, d, w, material, bbox }
     }
 
     /// Check if hit point is inside the quad using barycentric coordinates
@@ -63,6 +70,10 @@ impl Hittable for Quad {
         hit_record.set_face_normal(&r, self.normal);
         *rec = hit_record.clone();
         Some(hit_record)
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        Some(self.bbox)
     }
 }
 

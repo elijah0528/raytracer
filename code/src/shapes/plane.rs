@@ -3,6 +3,7 @@ use crate::vec3::{Vec3, Point3};
 use crate::material::Material;
 use crate::hittable::{Hittable, HitRecord};
 use crate::interval::Interval;
+use crate::aabb::AABB;
 use std::sync::Arc;
 
 /// Infinite plane primitive defined by a point and normal

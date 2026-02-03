@@ -1,6 +1,7 @@
 use crate::ray::Ray;
 use crate::vec3::{Vec3, Point3};
 use crate::material::Material;
+use crate::aabb::AABB;
 use std::sync::Arc;
 use crate::interval::Interval;
 
@@ -63,20 +64,33 @@ impl HitRecord {
 /// Hittable trait for objects that can be hit by a ray
 pub trait Hittable: Send + Sync {
     fn hit(&self, r: Ray, ray_t: Interval, rec: &mut HitRecord) -> Option<HitRecord>;
+    fn bounding_box(&self) -> Option<AABB> { None }
 }
 
 /// A list of hittable objects
-#[derive(Default)]
 pub struct HittableList {
     objects: Vec<Arc<dyn Hittable>>,
+    bbox: AABB,
+}
+
+impl Default for HittableList {
+    fn default() -> Self {
+        HittableList {
+            objects: vec![],
+            bbox: AABB::default(),
+        }
+    }
 }
 
 impl HittableList {
     pub fn new() -> Self {
-        HittableList { objects: vec![] }
+        Self::default()
     }
 
     pub fn add(&mut self, object: Arc<dyn Hittable>) {
+        if let Some(obj_box) = object.bounding_box() {
+            self.bbox = AABB::surrounding_box(&self.bbox, &obj_box);
+        }
         self.objects.push(object)
     }
 
@@ -104,6 +118,14 @@ impl Hittable for HittableList {
             Some(rec.clone())
         } else {
             None
+        }
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        if self.objects.is_empty() {
+            None
+        } else {
+            Some(self.bbox)
         }
     }
 }

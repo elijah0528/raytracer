@@ -3,6 +3,7 @@ use crate::vec3::{Vec3, Point3};
 use crate::material::Material;
 use crate::hittable::{Hittable, HitRecord};
 use crate::interval::Interval;
+use crate::aabb::AABB;
 use std::sync::Arc;
 
 /// Triangle primitive using Möller-Trumbore intersection algorithm
@@ -12,6 +13,7 @@ pub struct Triangle {
     v2: Point3,
     normal: Vec3,
     material: Arc<dyn Material>,
+    bbox: AABB,
 }
 
 impl Triangle {
@@ -20,7 +22,11 @@ impl Triangle {
         let edge2 = v2 - v0;
         let normal = edge1.cross(&edge2).unit_vector();
 
-        Self { v0, v1, v2, normal, material }
+        // Compute bounding box from vertices
+        let bbox01 = AABB::from_points(v0, v1);
+        let bbox = AABB::surrounding_box(&bbox01, &AABB::from_points(v2, v2)).pad();
+
+        Self { v0, v1, v2, normal, material, bbox }
     }
 }
 
@@ -69,6 +75,10 @@ impl Hittable for Triangle {
         hit_record.set_face_normal(&r, self.normal);
         *rec = hit_record.clone();
         Some(hit_record)
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        Some(self.bbox)
     }
 }
 
