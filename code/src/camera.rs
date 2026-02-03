@@ -265,6 +265,22 @@ impl Camera {
         img.save(filename).expect("Failed to save image");
         eprintln!("Saved to {}", filename);
     }
+
+    /// Render a single frame and return the buffer (for animation)
+    pub fn render_frame(&self, world: &(dyn Hittable + Sync)) -> Vec<u8> {
+        self.render_parallel(world)
+    }
+
+    /// Save a buffer to PNG
+    pub fn save_buffer_to_png(&self, buffer: &[u8], filename: &str) {
+        let img = image::RgbImage::from_raw(
+            self.image_width as u32,
+            self.image_height as u32,
+            buffer.to_vec(),
+        ).expect("Failed to create image from buffer");
+
+        img.save(filename).expect("Failed to save image");
+    }
 }
 
 /// Builder pattern for Camera configuration
