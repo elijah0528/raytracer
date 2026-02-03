@@ -5,82 +5,160 @@ use crate::constants::{INFINITY, random_generator};
 use crate::interval::Interval;
 use crate::hittable::{HitRecord, Hittable};
 
-#[derive(Default)]
+/// Camera with configurable position, orientation, FOV, and depth of field
 pub struct Camera {
+    // Image settings
     pub image_height: i32,
     pub image_width: i32,
-    pub camera_center: Point3,
-    pub pixel00_loc: Point3,
-    pub pixel_delta_u: Vec3,
-    pub pixel_delta_v: Vec3,
-    pub viewport_height: f32,
-    pub viewport_width: f32,
-    pub viewport_upper_left: Vec3,
-    pub viewport_u: Vec3,
-    pub viewport_v: Vec3,
-    pub focal_length: f32,
-    pub samples_per_pixel: f32,
-    pub pixel_sample_scale: f32,
-    pub max_recursive_depth: i32,
-    pub background: Color,
+    pub samples_per_pixel: i32,
+    pub max_depth: i32,
+
+    // Camera position and orientation
+    pub lookfrom: Point3,
+    pub lookat: Point3,
+    pub vup: Vec3,
+    pub vfov: f32, // Vertical field of view in degrees
+
+    // Depth of field
+    pub defocus_angle: f32, // Variation angle of rays through each pixel
+    pub focus_dist: f32,    // Distance from camera to perfect focus plane
+
+    // Computed values
+    pixel_sample_scale: f32,
+    center: Point3,
+    pixel00_loc: Point3,
+    pixel_delta_u: Vec3,
+    pixel_delta_v: Vec3,
+    u: Vec3, // Camera basis vectors
+    v: Vec3,
+    w: Vec3,
+    defocus_disk_u: Vec3,
+    defocus_disk_v: Vec3,
+}
+
+impl Default for Camera {
+    fn default() -> Self {
+        Camera {
+            image_height: 400,
+            image_width: 711,
+            samples_per_pixel: 100,
+            max_depth: 50,
+            lookfrom: Point3::new(0.0, 0.0, 0.0),
+            lookat: Point3::new(0.0, 0.0, -1.0),
+            vup: Vec3::new(0.0, 1.0, 0.0),
+            vfov: 90.0,
+            defocus_angle: 0.0,
+            focus_dist: 10.0,
+            pixel_sample_scale: 0.0,
+            center: Point3::default(),
+            pixel00_loc: Point3::default(),
+            pixel_delta_u: Vec3::default(),
+            pixel_delta_v: Vec3::default(),
+            u: Vec3::default(),
+            v: Vec3::default(),
+            w: Vec3::default(),
+            defocus_disk_u: Vec3::default(),
+            defocus_disk_v: Vec3::default(),
+        }
+    }
 }
 
 impl Camera {
     pub fn new(image_height: i32) -> Self {
-        let mut camera = Camera { 
-            image_height, 
-            background: Color::new(0.7, 0.8, 1.0), // Default sky blue
-            ..Default::default() 
+        let mut camera = Camera {
+            image_height,
+            ..Default::default()
         };
         camera.initialize();
         camera
     }
 
+    /// Initialize computed camera parameters
     pub fn initialize(&mut self) {
-        let aspect_ratio = 9.0 / 16.0;
-        let width: i32 = ((self.image_height as f32) / aspect_ratio) as i32;
-
+        // Calculate image width from aspect ratio (16:9)
+        let aspect_ratio = 16.0 / 9.0;
+        let width = ((self.image_height as f32) * aspect_ratio) as i32;
         self.image_width = if width < 1 { 1 } else { width };
 
-        self.focal_length = 1.0;
+        self.pixel_sample_scale = 1.0 / self.samples_per_pixel as f32;
+        self.center = self.lookfrom;
 
         // Viewport dimensions
-        self.viewport_height = 2.0;
-        self.viewport_width = self.viewport_height * (self.image_width as f32) / (self.image_height as f32);
+        let theta = self.vfov.to_radians();
+        let h = (theta / 2.0).tan();
+        let viewport_height = 2.0 * h * self.focus_dist;
+        let viewport_width = viewport_height * (self.image_width as f32 / self.image_height as f32);
 
-        self.viewport_u = Vec3::new(self.viewport_width, 0.0, 0.0);
-        self.viewport_v = Vec3::new(0.0, -self.viewport_height, 0.0);
+        // Calculate camera basis vectors
+        self.w = (self.lookfrom - self.lookat).unit_vector();
+        self.u = self.vup.cross(&self.w).unit_vector();
+        self.v = self.w.cross(&self.u);
 
-        self.pixel_delta_u = self.viewport_u / self.image_width as f32;
-        self.pixel_delta_v = self.viewport_v / self.image_height as f32;
+        // Viewport edge vectors
+        let viewport_u = viewport_width * self.u;
+        let viewport_v = viewport_height * (-self.v);
 
-        self.camera_center = Point3::default();
-        self.viewport_upper_left = self.camera_center 
-            - Vec3::new(0.0, 0.0, self.focal_length) 
-            - self.viewport_u / 2.0 
-            - self.viewport_v / 2.0;
-        self.pixel00_loc = self.viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
-        
-        self.samples_per_pixel = 100.0;
-        self.pixel_sample_scale = 1.0 / self.samples_per_pixel;
-        self.max_recursive_depth = 50;
+        // Pixel delta vectors
+        self.pixel_delta_u = viewport_u / self.image_width as f32;
+        self.pixel_delta_v = viewport_v / self.image_height as f32;
+
+        // Upper left pixel location
+        let viewport_upper_left = self.center
+            - (self.focus_dist * self.w)
+            - viewport_u / 2.0
+            - viewport_v / 2.0;
+        self.pixel00_loc = viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
+
+        // Defocus disk basis vectors
+        let defocus_radius = self.focus_dist * (self.defocus_angle / 2.0).to_radians().tan();
+        self.defocus_disk_u = self.u * defocus_radius;
+        self.defocus_disk_v = self.v * defocus_radius;
     }
 
+    /// Sample a random point in the unit square [-0.5, 0.5]
     fn sample_square(&self) -> Vec3 {
         Vec3::new(random_generator() - 0.5, random_generator() - 0.5, 0.0)
     }
 
-    fn get_ray(&self, i: i32, j: i32) -> Ray {
-        let offset = self.sample_square();
-        let pixel_sample = self.pixel00_loc 
-            + (self.pixel_delta_u * (i as f32 + offset.x())) 
-            + (self.pixel_delta_v * (j as f32 + offset.y()));
-        let ray_direction = pixel_sample - self.camera_center;
-        Ray::new(self.camera_center, ray_direction)
+    /// Sample a random point in the unit disk
+    fn sample_disk(&self) -> Vec3 {
+        loop {
+            let p = Vec3::new(
+                random_generator() * 2.0 - 1.0,
+                random_generator() * 2.0 - 1.0,
+                0.0,
+            );
+            if p.length_squared() < 1.0 {
+                return p;
+            }
+        }
     }
 
+    /// Get a random point on the defocus disk
+    fn defocus_disk_sample(&self) -> Point3 {
+        let p = self.sample_disk();
+        self.center + (p.x() * self.defocus_disk_u) + (p.y() * self.defocus_disk_v)
+    }
+
+    /// Generate a ray for pixel (i, j) with random sampling
+    fn get_ray(&self, i: i32, j: i32) -> Ray {
+        let offset = self.sample_square();
+        let pixel_sample = self.pixel00_loc
+            + (self.pixel_delta_u * (i as f32 + offset.x()))
+            + (self.pixel_delta_v * (j as f32 + offset.y()));
+
+        let ray_origin = if self.defocus_angle <= 0.0 {
+            self.center
+        } else {
+            self.defocus_disk_sample()
+        };
+        let ray_direction = pixel_sample - ray_origin;
+
+        Ray::new(ray_origin, ray_direction)
+    }
+
+    /// Calculate the color for a ray
     fn ray_color(&self, r: Ray, depth: i32, world: &dyn Hittable) -> Color {
-        // Exceeded ray bounce limit, no more light gathered
         if depth <= 0 {
             return Color::new(0.0, 0.0, 0.0);
         }
@@ -89,30 +167,30 @@ impl Camera {
         let interval = Interval::new(0.001, INFINITY);
 
         if let Some(hit_record) = world.hit(r, interval, &mut rec) {
-            // Get emission from material (for light sources)
+            // Get emission from material
             let emitted = if let Some(ref mat) = hit_record.material {
                 mat.emitted(0.0, 0.0, &hit_record.p())
             } else {
                 Color::new(0.0, 0.0, 0.0)
             };
 
-            // Try to scatter the ray
+            // Try to scatter
             if let Some(ref mat) = hit_record.material {
                 if let Some((attenuation, scattered)) = mat.scatter(&r, &hit_record) {
                     return emitted + attenuation * self.ray_color(scattered, depth - 1, world);
                 }
             }
-            
-            // No scatter (e.g., light source), just return emission
+
             return emitted;
         }
 
-        // No hit - return background/sky gradient
+        // Sky gradient background
         let unit_direction = r.direction().unit_vector();
         let t = 0.5 * (unit_direction.y() + 1.0);
         (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
     }
 
+    /// Render the scene to stdout in PPM format
     pub fn render(&self, world: &dyn Hittable) {
         println!("P3\n{} {}\n255", self.image_width, self.image_height);
 
@@ -120,14 +198,83 @@ impl Camera {
             eprint!("\rScanlines remaining: {} ", self.image_height - j);
             for i in 0..self.image_width {
                 let mut pixel_color = Color::new(0.0, 0.0, 0.0);
-                for _ in 0..(self.samples_per_pixel as i32) {
+                for _ in 0..self.samples_per_pixel {
                     let r = self.get_ray(i, j);
-                    pixel_color = pixel_color + self.ray_color(r, self.max_recursive_depth, world);
+                    pixel_color = pixel_color + self.ray_color(r, self.max_depth, world);
                 }
                 println!("{}", self.pixel_sample_scale * pixel_color);
             }
         }
         eprintln!("\rDone.                          ");
+    }
+}
+
+/// Builder pattern for Camera configuration
+pub struct CameraBuilder {
+    camera: Camera,
+}
+
+impl CameraBuilder {
+    pub fn new() -> Self {
+        CameraBuilder {
+            camera: Camera::default(),
+        }
+    }
+
+    pub fn image_height(mut self, height: i32) -> Self {
+        self.camera.image_height = height;
+        self
+    }
+
+    pub fn samples_per_pixel(mut self, samples: i32) -> Self {
+        self.camera.samples_per_pixel = samples;
+        self
+    }
+
+    pub fn max_depth(mut self, depth: i32) -> Self {
+        self.camera.max_depth = depth;
+        self
+    }
+
+    pub fn lookfrom(mut self, point: Point3) -> Self {
+        self.camera.lookfrom = point;
+        self
+    }
+
+    pub fn lookat(mut self, point: Point3) -> Self {
+        self.camera.lookat = point;
+        self
+    }
+
+    pub fn vup(mut self, up: Vec3) -> Self {
+        self.camera.vup = up;
+        self
+    }
+
+    pub fn vfov(mut self, fov: f32) -> Self {
+        self.camera.vfov = fov;
+        self
+    }
+
+    pub fn defocus_angle(mut self, angle: f32) -> Self {
+        self.camera.defocus_angle = angle;
+        self
+    }
+
+    pub fn focus_dist(mut self, dist: f32) -> Self {
+        self.camera.focus_dist = dist;
+        self
+    }
+
+    pub fn build(mut self) -> Camera {
+        self.camera.initialize();
+        self.camera
+    }
+}
+
+impl Default for CameraBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -140,6 +287,20 @@ mod tests {
         let c = Camera::new(400);
         assert_eq!(c.image_height, 400);
         assert_eq!(c.image_width, 711);
-        assert_eq!(c.viewport_width, c.viewport_height * 1.7775);
+    }
+
+    #[test]
+    fn test_camera_builder() {
+        let cam = CameraBuilder::new()
+            .image_height(200)
+            .samples_per_pixel(50)
+            .vfov(60.0)
+            .lookfrom(Point3::new(0.0, 1.0, 2.0))
+            .lookat(Point3::new(0.0, 0.0, 0.0))
+            .build();
+
+        assert_eq!(cam.image_height, 200);
+        assert_eq!(cam.samples_per_pixel, 50);
+        assert_eq!(cam.vfov, 60.0);
     }
 }

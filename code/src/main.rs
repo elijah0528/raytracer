@@ -8,9 +8,9 @@ mod interval;
 mod material;
 mod shapes;
 
-use vec3::Point3;
+use vec3::{Vec3, Point3};
 use color::Color;
-use camera::Camera;
+use camera::CameraBuilder;
 use hittable::HittableList;
 use material::{Lambertian, Metal, Dielectric};
 use shapes::Sphere;
@@ -18,8 +18,6 @@ use shapes::Sphere;
 use std::sync::Arc;
 
 fn main() {
-    let image_height: i32 = 400;
-
     // Materials
     let material_ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
     let material_center = Arc::new(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
@@ -64,7 +62,18 @@ fn main() {
         material_right,
     )));
 
-    // Camera
-    let cam = Camera::new(image_height);
+    // Camera with position, FOV, and depth of field
+    let cam = CameraBuilder::new()
+        .image_height(400)
+        .samples_per_pixel(100)
+        .max_depth(50)
+        .vfov(20.0)
+        .lookfrom(Point3::new(-2.0, 2.0, 1.0))
+        .lookat(Point3::new(0.0, 0.0, -1.0))
+        .vup(Vec3::new(0.0, 1.0, 0.0))
+        .defocus_angle(10.0)
+        .focus_dist(3.4)
+        .build();
+
     cam.render(&world);
 }
