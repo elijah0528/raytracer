@@ -6,7 +6,7 @@ use std::ops::{Deref, DerefMut, Div, Mul, Add, Sub};
 
 
 // Creating a new type wrapper
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct Color(Vec3);
 
 impl Deref for Color {

@@ -2,9 +2,8 @@ use crate::vec3::{Vec3, Point3};
 use crate::color::Color;
 use crate::ray::Ray;
 use crate::constants::{INFINITY, random_generator};
-use crate::interval::{Interval};
+use crate::interval::Interval;
 use crate::hittable::{HitRecord, Hittable};
-
 
 #[derive(Default)]
 pub struct Camera {
@@ -23,29 +22,29 @@ pub struct Camera {
     pub samples_per_pixel: f32,
     pub pixel_sample_scale: f32,
     pub max_recursive_depth: i32,
+    pub background: Color,
 }
 
 impl Camera {
     pub fn new(image_height: i32) -> Self {
-        let mut camera = Camera { image_height, ..Default::default() };
+        let mut camera = Camera { 
+            image_height, 
+            background: Color::new(0.7, 0.8, 1.0), // Default sky blue
+            ..Default::default() 
+        };
         camera.initialize();
         camera
     }
-    
-    pub fn initialize(&mut self) {
 
+    pub fn initialize(&mut self) {
         let aspect_ratio = 9.0 / 16.0;
         let width: i32 = ((self.image_height as f32) / aspect_ratio) as i32;
 
-        if width < 1 {
-            self.image_width = 1;
-        } else {
-            self.image_width = width;
-        }
+        self.image_width = if width < 1 { 1 } else { width };
 
         self.focal_length = 1.0;
 
-        // Camera
+        // Viewport dimensions
         self.viewport_height = 2.0;
         self.viewport_width = self.viewport_height * (self.image_width as f32) / (self.image_height as f32);
 
@@ -56,82 +55,79 @@ impl Camera {
         self.pixel_delta_v = self.viewport_v / self.image_height as f32;
 
         self.camera_center = Point3::default();
-        // camera_center:Point3, focal_length: f32, viewport_height: f32, viewport_width: f32
-        self.viewport_upper_left = self.camera_center - Vec3::new(0.0, 0.0, self.focal_length) - self.viewport_u/2.0 - self.viewport_v/2.0;
+        self.viewport_upper_left = self.camera_center 
+            - Vec3::new(0.0, 0.0, self.focal_length) 
+            - self.viewport_u / 2.0 
+            - self.viewport_v / 2.0;
         self.pixel00_loc = self.viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
+        
         self.samples_per_pixel = 100.0;
         self.pixel_sample_scale = 1.0 / self.samples_per_pixel;
         self.max_recursive_depth = 50;
     }
 
-    fn sample_square (&self) -> Vec3 {
-        Vec3::new((random_generator() as f32) - 0.5, (random_generator() as f32) - 0.5, 0.0)
+    fn sample_square(&self) -> Vec3 {
+        Vec3::new(random_generator() - 0.5, random_generator() - 0.5, 0.0)
     }
 
     fn get_ray(&self, i: i32, j: i32) -> Ray {
         let offset = self.sample_square();
-        let pixel_sample = self.pixel00_loc + (self.pixel_delta_u * (i as f32 + offset.x())) + (self.pixel_delta_v * (j as f32 + offset.y()));
+        let pixel_sample = self.pixel00_loc 
+            + (self.pixel_delta_u * (i as f32 + offset.x())) 
+            + (self.pixel_delta_v * (j as f32 + offset.y()));
         let ray_direction = pixel_sample - self.camera_center;
-        let r = Ray::new(self.camera_center, ray_direction);
-        r
-
+        Ray::new(self.camera_center, ray_direction)
     }
 
-    fn ray_color (&self, r: Ray, max_recursive_depth: i32, world: &dyn Hittable) -> Color {
+    fn ray_color(&self, r: Ray, depth: i32, world: &dyn Hittable) -> Color {
+        // Exceeded ray bounce limit, no more light gathered
+        if depth <= 0 {
+            return Color::new(0.0, 0.0, 0.0);
+        }
 
-        if max_recursive_depth <= 0 {
-            return Color::new(0.0, 0.0, 0.0)
-        }
-        let mut rec: HitRecord = HitRecord::default();
-        let interval = Interval::new(0.0001, INFINITY);
-        let hit = world.hit(r, interval, &mut rec); 
-        match hit {
-            Some(hit_record) => {
-                let n = hit_record.normal();
-                let direction: Vec3 = Vec3::random_on_hemisphere(&n) + Vec3::random_unit_vector();
-                
-                return 0.5 * self.ray_color(Ray::new(hit_record.p(), direction), max_recursive_depth - 1,  world)
-                // println!("{}", hit_record.normal());
-                /* return Color::new(
-                    0.5 * n.x() + 0.5,
-                    0.5 * n.y() + 0.5,
-                    0.5 * n.z() + 0.5,
-                );    */     
+        let mut rec = HitRecord::default();
+        let interval = Interval::new(0.001, INFINITY);
+
+        if let Some(hit_record) = world.hit(r, interval, &mut rec) {
+            // Get emission from material (for light sources)
+            let emitted = if let Some(ref mat) = hit_record.material {
+                mat.emitted(0.0, 0.0, &hit_record.p())
+            } else {
+                Color::new(0.0, 0.0, 0.0)
+            };
+
+            // Try to scatter the ray
+            if let Some(ref mat) = hit_record.material {
+                if let Some((attenuation, scattered)) = mat.scatter(&r, &hit_record) {
+                    return emitted + attenuation * self.ray_color(scattered, depth - 1, world);
+                }
             }
-            None => {
-                let t: f32 = 0.5 * (r.direction().unit_vector().y() as f32 + 1.0);
-                return Color::new(
-                    (1.0 - t) * 1.0 + t * 0.5,
-                    (1.0 - t) * 1.0 + t * 0.7,
-                    (1.0 - t) * 1.0 + t * 1.0,
-                );
-            }
+            
+            // No scatter (e.g., light source), just return emission
+            return emitted;
         }
+
+        // No hit - return background/sky gradient
+        let unit_direction = r.direction().unit_vector();
+        let t = 0.5 * (unit_direction.y() + 1.0);
+        (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
     }
 
-    pub fn render(&mut self, world: &dyn Hittable) {
-
-        println!("P3\n{} {} \n255\n", self.image_width, self.image_height);
+    pub fn render(&self, world: &dyn Hittable) {
+        println!("P3\n{} {}\n255", self.image_width, self.image_height);
 
         for j in 0..self.image_height {
-            for i in 0..self.image_width{
-/*                 let pixel_center = self.pixel00_loc + (self.pixel_delta_u * (i as f32)) + (self.pixel_delta_v * (j as f32));
-                let ray_direction = pixel_center - self.camera_center;
-                let r = Ray::new(self.camera_center, ray_direction);
-
-                let pixel_color: Color = self.ray_color(r, world);
-                
-                println!("{}", pixel_color);
- */
-                let mut pixel_color: Color = Color::new(0.0, 0.0, 0.0);
-                for _sample in 0..(self.samples_per_pixel as i32) {
-                    let r: Ray = self.get_ray(i, j);
-                    pixel_color = pixel_color + self.ray_color(r, self.max_recursive_depth, world); 
+            eprint!("\rScanlines remaining: {} ", self.image_height - j);
+            for i in 0..self.image_width {
+                let mut pixel_color = Color::new(0.0, 0.0, 0.0);
+                for _ in 0..(self.samples_per_pixel as i32) {
+                    let r = self.get_ray(i, j);
+                    pixel_color = pixel_color + self.ray_color(r, self.max_recursive_depth, world);
                 }
                 println!("{}", self.pixel_sample_scale * pixel_color);
- 
             }
         }
+        eprintln!("\rDone.                          ");
     }
 }
 
@@ -140,14 +136,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_camera_new(){
-        let c: Camera = Camera::new(400);
-        assert_eq!(c.image_height, 400);        
+    fn test_camera_new() {
+        let c = Camera::new(400);
+        assert_eq!(c.image_height, 400);
         assert_eq!(c.image_width, 711);
         assert_eq!(c.viewport_width, c.viewport_height * 1.7775);
-        assert_eq!(c.viewport_width, c.viewport_height * 1.7775);
-        assert_eq!(c.viewport_width, c.viewport_height * 1.7775);
-        assert_eq!(c.viewport_width, c.viewport_height * 1.7775);
-
     }
 }
